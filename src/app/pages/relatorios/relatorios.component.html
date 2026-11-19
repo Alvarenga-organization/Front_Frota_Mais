@@ -1,4 +1,101 @@
-<header class="cabecalho-pagina">
-  <h1>Relatórios</h1>
-  <p>Análise detalhada de performance da frota</p>
+<header class="cabecalho-pagina com-acoes">
+  <div>
+    <h1>Relatórios</h1>
+    <p>Análise detalhada de performance da frota</p>
+  </div>
+  <app-filtro-periodo [periodo]="periodoInicial" (filtroMudou)="aoMudarPeriodo($event)"></app-filtro-periodo>
 </header>
+
+@switch (estado()) {
+  @case ('carregando') { <p class="estado-pagina" role="status">Carregando relatórios…</p> }
+  @case ('falha') {
+    <div class="estado-pagina estado-falha" role="alert">
+      <p>Não foi possível carregar os relatórios.</p>
+      @for (detalhe of detalhesFalha(); track $index) { <p>{{ detalhe }}</p> }
+      <button type="button" class="botao botao-secundario" (click)="carregar()">Tentar de novo</button>
+    </div>
+  }
+  @default {
+    @if (dados(); as d) {
+      <p class="periodo-efetivo">{{ d.de ? 'Período: ' + (d.de | data) + ' a ' + (d.ate | data) : 'Todo o histórico' }} · fretes pela data de descarga</p>
+      <div class="grade-cartoes">
+        <article class="cartao-indicador"><span>Receita</span><strong>{{ d.receitaTotal | moeda }}</strong></article>
+        <article class="cartao-indicador"><span>Custos</span><strong>{{ d.custoOperacionalTotal | moeda }}</strong></article>
+        <article class="cartao-indicador"><span>Lucro</span><strong>{{ d.lucroTotal | moeda }}</strong></article>
+        <article class="cartao-indicador"><span>Margem</span>
+          <strong>{{ d.margemPercentual === null ? naoCalculado : (d.margemPercentual | numero) + '%' }}</strong>
+          <small>Lucro total ÷ receita total (servidor)</small></article>
+        <article class="cartao-indicador"><span>Rodado vazio (R$)</span><strong>{{ d.custoDieselVazio | moeda }}</strong>
+          <small>Diesel estimado dos deslocamentos vazios</small></article>
+        <article class="cartao-indicador"><span>Km vazio</span><strong>{{ d.kmVazio | numero:0 }}</strong>
+          <small>{{ d.percentualKmVazio === null ? '' : (d.percentualKmVazio | numero) + '% do total rodado' }}</small></article>
+        <article class="cartao-indicador"><span>Consumo médio</span>
+          <strong>{{ d.consumoMedioKmPorLitro === null ? naoCalculado : (d.consumoMedioKmPorLitro | numero) + ' km/L' }}</strong></article>
+      </div>
+
+      <section class="cartao-detalhe bloco-tabela" aria-labelledby="titulo-por-caminhao">
+        <h2 id="titulo-por-caminhao">Performance por caminhão</h2>
+        @if (!porCaminhao().length) {
+          <p class="secundario">Nenhum caminhão com movimento no período.</p>
+        } @else {
+          <div class="tabela-rolagem">
+            <table class="tabela">
+              <thead>
+                <tr>
+                  <th scope="col">Caminhão</th><th scope="col">Viagens</th><th scope="col">Km vazio / carregado</th>
+                  <th scope="col">Receita</th><th scope="col">Custos</th><th scope="col">Lucro</th><th scope="col">Margem</th>
+                  <th scope="col">Lucro por km</th><th scope="col">Manutenções</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of porCaminhao(); track item.caminhaoId) {
+                  <tr [attr.data-caminhao-id]="item.caminhaoId">
+                    <td class="destaque">{{ item.placa }}</td>
+                    <td>{{ item.indicadores.viagensConsideradas }}</td>
+                    <td>{{ item.indicadores.kmVazio | numero:0 }} / {{ item.indicadores.kmCarregado | numero:0 }}</td>
+                    <td>{{ item.indicadores.receitaTotal | moeda }}</td>
+                    <td>{{ item.indicadores.custoOperacionalTotal | moeda }}</td>
+                    <td>{{ item.indicadores.lucroTotal | moeda }}</td>
+                    <td>{{ item.indicadores.margemPercentual === null ? naoCalculado : (item.indicadores.margemPercentual | numero) + '%' }}</td>
+                    <td>{{ item.indicadores.lucroPorKm | moeda:naoCalculado }}</td>
+                    <td>{{ item.indicadores.custoManutencoes | moeda }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+
+      <section class="cartao-detalhe bloco-tabela" aria-labelledby="titulo-por-viagem">
+        <h2 id="titulo-por-viagem">Rentabilidade por viagem</h2>
+        <p class="secundario">Fretes concluídos com descarga no período. Cálculo incompleto aparece como “{{ naoCalculado }}”.</p>
+        @if (!fretes().length) {
+          <p class="secundario">Nenhum frete concluído no período.</p>
+        } @else {
+          <div class="tabela-rolagem">
+            <table class="tabela">
+              <thead>
+                <tr><th scope="col">Caminhão</th><th scope="col">Rota</th><th scope="col">Descarga</th><th scope="col">Frete</th>
+                  <th scope="col">Custos</th><th scope="col">Lucro</th><th scope="col">Margem</th></tr>
+              </thead>
+              <tbody>
+                @for (frete of fretes(); track frete.id) {
+                  <tr [attr.data-viagem-id]="frete.id">
+                    <td class="destaque"><a [routerLink]="['/viagens', frete.id]">{{ frete.placa }}</a></td>
+                    <td>{{ rota(frete) }}</td>
+                    <td>{{ frete.dataFim | data }}</td>
+                    <td>{{ frete.valorFrete | moeda }}</td>
+                    <td>{{ frete.custoOperacionalTotal | moeda:naoCalculado }}</td>
+                    <td>{{ frete.lucro | moeda:naoCalculado }}</td>
+                    <td>{{ frete.margemPercentual === null ? naoCalculado : (frete.margemPercentual | numero) + '%' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+  }
+}
