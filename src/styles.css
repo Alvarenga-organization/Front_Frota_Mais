@@ -797,3 +797,10 @@ code {
 .coluna-financeira {
     white-space: nowrap;
 }
+
+.cartao-item .secundario,
+.secundario {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 400;
+}
