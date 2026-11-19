@@ -2,8 +2,8 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { Router } from '@angular/router';
-import { map } from 'rxjs';
-import { CaminhaoResponse, StatusViagem, ViagemResponse, ViagemResumoResponse } from '../../core/modelos/api.modelos';
+import { catchError, map, of } from 'rxjs';
+import { CaminhaoResponse, MotoristaResponse, StatusViagem, ViagemResponse, ViagemResumoResponse } from '../../core/modelos/api.modelos';
 import { ViagensService } from '../../core/api/viagens.service';
 import { CaminhoesService } from '../../core/api/caminhoes.service';
 import { SessaoService } from '../../core/sessao/sessao.service';
@@ -12,6 +12,8 @@ import { EstadoCarga } from '../../compartilhado/estado-lista/estado-lista.compo
 import { JanelasService } from '../../compartilhado/janela/janelas.service';
 import { CLASSE_SELO_VIAGEM, NAO_CALCULADO, ROTULO_STATUS_VIAGEM } from '../../compartilhado/formatacao';
 import { AberturaViagemComponent, DadosAberturaViagem } from './abertura/abertura-viagem.component';
+import { DadosHistorica, HistoricaViagemComponent } from './historica/historica-viagem.component';
+import { MotoristasService } from '../../core/api/motoristas.service';
 import { rota } from './viagem-regras';
 
 /**
@@ -28,6 +30,7 @@ import { rota } from './viagem-regras';
 export class ViagensComponent {
   private readonly servico = inject(ViagensService);
   private readonly caminhoesServico = inject(CaminhoesService);
+  private readonly motoristasServico = inject(MotoristasService);
   private readonly janelas = inject(JanelasService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -107,6 +110,20 @@ export class ViagensComponent {
       .afterClosed()
       .subscribe(aberta => {
         if (aberta) this.router.navigate(['/viagens', aberta.id]);
+      });
+  }
+
+  /** Viagem histórica (só DONO): busca os motoristas para indicar o responsável. */
+  historica(): void {
+    this.motoristasServico.listar()
+      .pipe(catchError(() => of<MotoristaResponse[]>([])), takeUntilDestroyed(this.destroyRef))
+      .subscribe(motoristas => {
+        this.janelas.abrir<HistoricaViagemComponent, DadosHistorica, ViagemResponse>(
+          HistoricaViagemComponent, { caminhoes: this.caminhoes(), motoristas }, 900)
+          .afterClosed()
+          .subscribe(registrada => {
+            if (registrada) this.router.navigate(['/viagens', registrada.id]);
+          });
       });
   }
 }

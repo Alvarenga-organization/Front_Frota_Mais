@@ -11,11 +11,12 @@ import { FinalizacaoViagemComponent } from './finalizacao/finalizacao-viagem.com
 import { CancelamentoViagemComponent } from './cancelamento/cancelamento-viagem.component';
 import { LancamentoFormularioComponent } from './lancamento/lancamento-formulario.component';
 import { CamposAbastecimentoComponent } from './lancamento/campos-abastecimento.component';
+import { HistoricaViagemComponent } from './historica/historica-viagem.component';
 
 @NgModule({
   declarations: [
     ViagensComponent, ViagemDetalheComponent, AberturaViagemComponent, EdicaoViagemComponent, FinalizacaoViagemComponent,
-    CancelamentoViagemComponent, LancamentoFormularioComponent, CamposAbastecimentoComponent
+    CancelamentoViagemComponent, LancamentoFormularioComponent, CamposAbastecimentoComponent, HistoricaViagemComponent
   ],
   imports: [CommonModule, ReactiveFormsModule, CompartilhadoModule,
     RouterModule.forChild([

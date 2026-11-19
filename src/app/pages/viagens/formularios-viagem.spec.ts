@@ -9,6 +9,7 @@ import { FinalizacaoViagemComponent } from './finalizacao/finalizacao-viagem.com
 import { CancelamentoViagemComponent } from './cancelamento/cancelamento-viagem.component';
 import { LancamentoFormularioComponent } from './lancamento/lancamento-formulario.component';
 import { EdicaoViagemComponent } from './edicao/edicao-viagem.component';
+import { HistoricaViagemComponent } from './historica/historica-viagem.component';
 import { AvisoService } from '../../compartilhado/aviso.service';
 import { CAMINHOES_DONO_MOCK } from '../../../testes/dados/caminhoes.mock';
 import { MOTORISTAS_MOCK } from '../../../testes/dados/motoristas.mock';
@@ -233,6 +234,43 @@ describe('Formulários de viagem', () => {
       const req = controle.expectOne('/api/viagens/205');
       expect(req.request.body.motoristaId).toBeNull();
       req.flush(viagemEmAndamento({ motoristaId: null, motoristaNome: null }));
+    });
+  });
+
+  describe('Viagem histórica (DONO)', () => {
+    it('exige todos os dados da finalização e envia listas opcionais num único POST', () => {
+      const fixture = criar(HistoricaViagemComponent, { caminhoes: CAMINHOES_DONO_MOCK, motoristas: MOTORISTAS_MOCK });
+      const c = fixture.componentInstance;
+      expect(c.caminhoes.some(cam => cam.status === 'EXCLUIDO')).toBeFalse();
+      // Motorista inativo também pode constar como responsável de frete antigo.
+      expect(c.opcoesResponsavel.map(o => o.rotulo)).toContain('Marcos Souza');
+      c.salvar();
+      controle.expectNone('/api/viagens/historicas');
+      c.formulario.patchValue({ caminhaoId: '1', dataInicio: '2025-02-10', dataFim: '2025-02-12', origem: 'Cruzália', destino: 'Santos',
+        valorFrete: '2.800,00', kmInicialCarregado: '50000', kmFinalCarregado: '50600', consumoMedioCarregado: '2,40' });
+      c.adicionar('pedagio');
+      c.pedagios.at(0).patchValue({ data: '2025-02-11', valor: '45,80' });
+      c.adicionar('despesa');
+      c.despesas.at(0).patchValue({ descricao: 'Lavagem', data: '2025-02-12', valor: '60' });
+      c.salvar();
+      const req = controle.expectOne('/api/viagens/historicas');
+      expect(req.request.body).toEqual({
+        caminhaoId: 1, motoristaId: null, dataInicio: '2025-02-10', dataFim: '2025-02-12', origem: 'Cruzália', destino: 'Santos',
+        valorFrete: '2800.00', kmInicialVazio: null, kmInicialCarregado: 50000, kmFinalCarregado: 50600, consumoMedioVazio: null,
+        consumoMedioCarregado: '2.40', abastecimentos: null, pedagios: [{ data: '2025-02-11', valor: '45.80' }],
+        despesasExtras: [{ descricao: 'Lavagem', data: '2025-02-12', valor: '60' }]
+      });
+      req.flush(viagemFinalizada({ cadastroRetroativoEm: '2026-11-19T12:00:00Z' }), { status: 201, statusText: 'Created' });
+      expect(fechar).toHaveBeenCalled();
+    });
+
+    it('com deslocamento vazio, o consumo vazio passa a ser obrigatório', () => {
+      const fixture = criar(HistoricaViagemComponent, { caminhoes: CAMINHOES_DONO_MOCK, motoristas: [] });
+      const c = fixture.componentInstance;
+      c.formulario.patchValue({ kmInicialVazio: '49900' });
+      expect(c.formulario.hasError('consumoVazioObrigatorio')).toBeTrue();
+      c.formulario.patchValue({ consumoMedioVazio: '3,1' });
+      expect(c.formulario.hasError('consumoVazioObrigatorio')).toBeFalse();
     });
   });
 });

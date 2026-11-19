@@ -43,3 +43,15 @@
     color: #64748b;
     font-size: 13px;
 }
+
+.acoes-cabecalho {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.botao-historica {
+    background: #ffffff;
+    color: #0A56D0;
+    border: 1px solid #0A56D0;
+}

@@ -3,9 +3,15 @@
     <h1>Viagens</h1>
     <p>{{ ehDono() ? 'Fretes da sua frota' : 'Fretes dos caminhões vinculados a você' }}</p>
   </div>
-  <button type="button" class="botao-cabecalho" (click)="nova()">
-    + {{ telaPequena() ? 'Nova' : 'Nova Viagem' }}
-  </button>
+  <div class="acoes-cabecalho">
+    @if (ehDono()) {
+      <button type="button" class="botao-cabecalho botao-historica" (click)="historica()"
+        title="Registrar um frete que já aconteceu">{{ telaPequena() ? 'Histórica' : 'Viagem histórica' }}</button>
+    }
+    <button type="button" class="botao-cabecalho" (click)="nova()">
+      + {{ telaPequena() ? 'Nova' : 'Nova Viagem' }}
+    </button>
+  </div>
 </header>
 
 @if (estado() === 'sucesso' && emAndamento().length && !filtroStatus()) {

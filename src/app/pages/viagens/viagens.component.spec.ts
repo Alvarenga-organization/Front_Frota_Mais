@@ -50,9 +50,10 @@ describe('ViagensComponent (lista)', () => {
     expect(el.querySelector('tr[data-viagem-id="205"]')!.textContent).toContain('56,99%');
   });
 
-  it('MOTORISTA não vê colunas financeiras, mas vê o valor do frete', () => {
+  it('MOTORISTA não vê colunas financeiras nem "Viagem histórica", mas vê o valor do frete', () => {
     entrarComo('MOTORISTA');
     const el: HTMLElement = criar(RESUMOS_MOTORISTA).nativeElement;
+    expect(el.querySelector('.botao-historica')).toBeNull();
     expect(el.querySelector('.coluna-financeira')).toBeNull();
     expect(el.textContent).not.toContain('Lucro');
     expect(el.querySelector('tr[data-viagem-id="205"]')!.textContent).toContain('3.500,00');
