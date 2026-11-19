@@ -1,0 +1,70 @@
+<app-janela [titulo]="titulo"
+  [descricao]="encerrada ? 'Viagem encerrada: a alteração fica registrada na auditoria e recalcula o resultado deste frete.' : null">
+  <form (ngSubmit)="salvar()" id="formulario-lancamento" novalidate>
+    @switch (dados.tipo) {
+      @case ('abastecimentos') {
+        <app-campos-abastecimento [grupo]="abastecimento" [hoje]="hoje"
+          ajudaData="Abastecimento feito antes da partida (entre viagens) também pertence a este frete: informe a data real.">
+        </app-campos-abastecimento>
+      }
+      @case ('pedagios') {
+        <div class="grade-formulario" [formGroup]="pedagio">
+          <div class="campo">
+            <label for="pedagio-data">Data</label>
+            <input id="pedagio-data" type="date" formControlName="data" [max]="hoje" [attr.aria-invalid]="invalido(pedagio.controls.data)">
+          </div>
+          <div class="campo">
+            <label for="pedagio-valor">Valor pago (R$)</label>
+            <input id="pedagio-valor" inputmode="decimal" formControlName="valor" placeholder="Ex: 40,10"
+              [attr.aria-invalid]="invalido(pedagio.controls.valor)">
+            @if (invalido(pedagio.controls.valor)) {
+              <p class="erro-campo-formulario">Informe o valor pago (maior que zero, até 2 casas).</p>
+            }
+          </div>
+        </div>
+      }
+      @default {
+        <div class="grade-formulario" [formGroup]="despesa">
+          <div class="campo campo-inteiro">
+            <label for="despesa-descricao">Descrição</label>
+            <input id="despesa-descricao" formControlName="descricao" [maxlength]="limiteDescricao"
+              placeholder="Ex: Almoço do motorista, lavagem, borracharia" [attr.aria-invalid]="invalido(despesa.controls.descricao)">
+            @if (invalido(despesa.controls.descricao)) {
+              <p class="erro-campo-formulario">Descreva a despesa (até {{ limiteDescricao }} caracteres).</p>
+            }
+          </div>
+          <div class="campo">
+            <label for="despesa-data">Data</label>
+            <input id="despesa-data" type="date" formControlName="data" [max]="hoje" [attr.aria-invalid]="invalido(despesa.controls.data)">
+          </div>
+          <div class="campo">
+            <label for="despesa-valor">Valor (R$)</label>
+            <input id="despesa-valor" inputmode="decimal" formControlName="valor" [attr.aria-invalid]="invalido(despesa.controls.valor)">
+            @if (invalido(despesa.controls.valor)) {
+              <p class="erro-campo-formulario">Informe o valor (maior que zero, até 2 casas).</p>
+            }
+          </div>
+        </div>
+      }
+    }
+  </form>
+
+  <div rodape>
+    @if (falha().length) {
+      <div class="aviso-formulario aviso-erro" role="alert">
+        <app-icone nome="alerta" [tamanho]="18"></app-icone>
+        <div>
+          @for (detalhe of falha(); track $index) {
+            <p>{{ detalhe }}</p>
+          }
+        </div>
+      </div>
+    }
+    <div class="acoes-janela">
+      <button type="button" class="botao botao-secundario" mat-dialog-close>Cancelar</button>
+      <button type="submit" form="formulario-lancamento" class="botao botao-primario" [disabled]="enviando()">
+        {{ enviando() ? 'Salvando…' : 'Salvar' }}
+      </button>
+    </div>
+  </div>
+</app-janela>

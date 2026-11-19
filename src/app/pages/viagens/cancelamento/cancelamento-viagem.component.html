@@ -1,0 +1,61 @@
+<app-janela titulo="Cancelar viagem">
+  <p class="aviso-formulario" role="note">
+    <app-icone nome="alerta" [tamanho]="18"></app-icone>
+    Não há volta: a viagem cancelada não pode ser finalizada nem reaberta. Nada é apagado: os lançamentos
+    ficam registrados e o caminhão fica livre para outra viagem. Depois, você ainda pode informar o valor
+    recebido e incluir ou corrigir lançamentos (fica registrado na auditoria); eles entram no financeiro do mês do cancelamento.
+  </p>
+  <form [formGroup]="formulario" (ngSubmit)="cancelar()" id="formulario-cancelamento" novalidate>
+    <div class="grade-formulario">
+      <div class="campo campo-inteiro">
+        <label for="cancelamento-motivo">Motivo</label>
+        <textarea id="cancelamento-motivo" formControlName="motivo" rows="3" [maxlength]="limiteMotivo"
+          [attr.aria-invalid]="invalido('motivo')" aria-describedby="cancelamento-motivo-ajuda"></textarea>
+        <p class="ajuda-campo" id="cancelamento-motivo-ajuda">{{ formulario.controls.motivo.value.length }}/{{ limiteMotivo }}</p>
+        @if (invalido('motivo')) {
+          <p class="erro-campo-formulario">Informe o motivo do cancelamento.</p>
+        }
+      </div>
+      <div class="campo">
+        <label for="cancelamento-data">Data do cancelamento</label>
+        <input id="cancelamento-data" type="date" formControlName="dataFim" [min]="viagem.dataInicio" [max]="hoje">
+        <p class="ajuda-campo">Define o mês em que os valores entram no financeiro. Em branco: hoje.</p>
+      </div>
+      <div class="campo">
+        <label for="cancelamento-km">Km final <span class="opcional">— opcional</span></label>
+        <input id="cancelamento-km" type="number" inputmode="numeric" formControlName="kmFinalCarregado" min="0"
+          [attr.aria-invalid]="invalido('kmFinalCarregado')">
+        <p class="ajuda-campo">Com o km e os consumos, o diesel do que foi rodado pode ser estimado.</p>
+      </div>
+      @if (saiuVazio) {
+        <div class="campo">
+          <label for="cancelamento-consumo-vazio">Consumo médio vazio (km/L) <span class="opcional">— opcional</span></label>
+          <input id="cancelamento-consumo-vazio" inputmode="decimal" formControlName="consumoMedioVazio">
+        </div>
+      }
+      <div class="campo">
+        <label for="cancelamento-consumo-carregado">Consumo médio carregado (km/L) <span class="opcional">— opcional</span></label>
+        <input id="cancelamento-consumo-carregado" inputmode="decimal" formControlName="consumoMedioCarregado">
+      </div>
+    </div>
+  </form>
+
+  <div rodape>
+    @if (falha().length) {
+      <div class="aviso-formulario aviso-erro" role="alert">
+        <app-icone nome="alerta" [tamanho]="18"></app-icone>
+        <div>
+          @for (detalhe of falha(); track $index) {
+            <p>{{ detalhe }}</p>
+          }
+        </div>
+      </div>
+    }
+    <div class="acoes-janela">
+      <button type="button" class="botao botao-secundario" mat-dialog-close>Voltar</button>
+      <button type="submit" form="formulario-cancelamento" class="botao botao-perigo" [disabled]="enviando()">
+        {{ enviando() ? 'Cancelando…' : 'Cancelar viagem' }}
+      </button>
+    </div>
+  </div>
+</app-janela>

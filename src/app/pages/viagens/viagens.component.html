@@ -1,4 +1,128 @@
-<header class="cabecalho-pagina">
-  <h1>Viagens</h1>
-  <p>Histórico de viagens da sua frota</p>
+<header class="cabecalho-pagina com-acoes">
+  <div>
+    <h1>Viagens</h1>
+    <p>{{ ehDono() ? 'Fretes da sua frota' : 'Fretes dos caminhões vinculados a você' }}</p>
+  </div>
+  <button type="button" class="botao-cabecalho" (click)="nova()">
+    + {{ telaPequena() ? 'Nova' : 'Nova Viagem' }}
+  </button>
 </header>
+
+@if (estado() === 'sucesso' && emAndamento().length && !filtroStatus()) {
+  <section class="destaque-andamento" aria-labelledby="titulo-andamento">
+    <h2 id="titulo-andamento">Em andamento</h2>
+    <ul class="lista-andamento">
+      @for (viagem of emAndamento(); track viagem.id) {
+        <li>
+          <a class="cartao-andamento" [routerLink]="['/viagens', viagem.id]">
+            <strong>{{ viagem.placa }}</strong>
+            <span>{{ rota(viagem) }}</span>
+            <span class="secundario">Desde {{ viagem.dataInicio | data }} · lançar abastecimento, pedágio, despesa ou finalizar</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </section>
+}
+
+<section class="cartao-lista" aria-labelledby="titulo-viagens">
+  <div class="cartao-lista-topo">
+    <div>
+      <h2 id="titulo-viagens">Histórico</h2>
+      <p class="contagem">{{ viagens().length }} viagem(ns)</p>
+    </div>
+    <div class="filtros-lista">
+      <label class="busca">
+        <span class="cdk-visually-hidden">Filtrar por status</span>
+        <select [value]="filtroStatus()" (change)="filtrarStatus($any($event.target).value)" aria-label="Filtrar por status">
+          <option value="">Todos os status</option>
+          @for (status of statusFiltro; track status) {
+            <option [value]="status">{{ rotuloStatus[status] }}</option>
+          }
+        </select>
+      </label>
+      <label class="busca">
+        <span class="cdk-visually-hidden">Filtrar por caminhão</span>
+        <select [value]="filtroCaminhao() ?? ''" (change)="filtrarCaminhao($any($event.target).value)" aria-label="Filtrar por caminhão">
+          <option value="">Todos os caminhões</option>
+          @for (caminhao of caminhoes(); track caminhao.id) {
+            <option [value]="caminhao.id">{{ caminhao.placa }}</option>
+          }
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <app-estado-lista [estado]="estado()" [detalhes]="detalhesFalha()" (tentarDeNovo)="carregar()"
+    mensagemVazio="Nenhuma viagem encontrada. Use “+ Nova Viagem” para abrir um frete.">
+    @if (telaPequena()) {
+      <ul class="lista-cartoes" aria-label="Viagens">
+        @for (viagem of viagens(); track viagem.id) {
+          <li class="cartao-item" [attr.data-viagem-id]="viagem.id">
+            <div class="cartao-item-topo">
+              <div>
+                <p class="cartao-item-titulo">{{ viagem.placa }}</p>
+                <p class="cartao-item-linha">{{ rota(viagem) }}</p>
+                <p class="cartao-item-linha">{{ viagem.dataInicio | data }} – {{ viagem.dataFim | data }}</p>
+                <p class="cartao-item-linha">Frete: {{ viagem.valorFrete | moeda:'não informado' }}</p>
+                @if (ehDono()) {
+                  <p class="cartao-item-linha coluna-financeira">Lucro: {{ viagem.lucro | moeda:naoCalculado }}</p>
+                }
+              </div>
+              <span [class]="classeSelo[viagem.status]">{{ rotuloStatus[viagem.status] }}</span>
+            </div>
+            <div class="cartao-item-acoes">
+              <a class="botao botao-secundario" [routerLink]="['/viagens', viagem.id]">Ver viagem</a>
+            </div>
+          </li>
+        }
+      </ul>
+    } @else {
+      <div class="tabela-rolagem">
+        <table class="tabela">
+          <thead>
+            <tr>
+              <th scope="col">Caminhão</th>
+              <th scope="col">Rota</th>
+              <th scope="col">Motorista</th>
+              <th scope="col">Início</th>
+              <th scope="col">Fim</th>
+              <th scope="col" title="Km vazio / km carregado">Km vazio / carregado</th>
+              <th scope="col">Frete</th>
+              @if (ehDono()) {
+                <th scope="col" class="coluna-financeira">Lucro</th>
+                <th scope="col" class="coluna-financeira">Margem</th>
+              }
+              <th scope="col">Status</th>
+              <th scope="col" class="coluna-acoes">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (viagem of viagens(); track viagem.id) {
+              <tr [attr.data-viagem-id]="viagem.id">
+                <td class="destaque">{{ viagem.placa }}</td>
+                <td>{{ rota(viagem) }}</td>
+                <td>{{ viagem.motoristaNome ?? '—' }}</td>
+                <td>{{ viagem.dataInicio | data }}</td>
+                <td>{{ viagem.dataFim | data }}</td>
+                <td>{{ km(viagem) }}</td>
+                <td>{{ viagem.valorFrete | moeda }}</td>
+                @if (ehDono()) {
+                  <td class="coluna-financeira">{{ viagem.lucro | moeda:naoCalculado }}</td>
+                  <td class="coluna-financeira">{{ viagem.margemPercentual === null ? naoCalculado : (viagem.margemPercentual | numero) + '%' }}</td>
+                }
+                <td><span [class]="classeSelo[viagem.status]">{{ rotuloStatus[viagem.status] }}</span></td>
+                <td class="coluna-acoes">
+                  <button type="button" class="acao-icone acao-detalhe" (click)="detalhe(viagem)"
+                    [attr.aria-label]="'Ver viagem ' + viagem.placa + ' de ' + (viagem.dataInicio | data)" title="Ver viagem">
+                    <app-icone nome="busca"></app-icone>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </app-estado-lista>
+</section>

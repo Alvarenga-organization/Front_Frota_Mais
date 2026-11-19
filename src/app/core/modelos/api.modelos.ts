@@ -195,6 +195,17 @@ export interface AlteracaoViagemRequest {
   motoristaId: number | null;
 }
 
+/**
+ * PUT de viagem feito pelo MOTORISTA: `motoristaId` **ausente** mantém o responsável atual
+ * (enviar outro id dá 403). Por isso o campo não existe neste tipo.
+ */
+export type AlteracaoViagemMotoristaRequest = Omit<AlteracaoViagemRequest, 'motoristaId'>;
+
+export interface FiltroViagens {
+  status?: StatusViagem | null;
+  caminhaoId?: number | null;
+}
+
 export interface FinalizacaoViagemRequest {
   dataFim: DataIso;
   kmFinalCarregado: number;

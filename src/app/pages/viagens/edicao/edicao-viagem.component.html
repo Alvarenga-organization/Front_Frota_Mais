@@ -1,0 +1,84 @@
+<app-janela [titulo]="titulo"
+  [descricao]="encerrada ? 'A alteração fica registrada na auditoria e regrava o resultado deste frete.' : 'No carregamento, informe o km do carregamento. O valor do frete pode entrar a qualquer momento.'">
+  <form [formGroup]="formulario" (ngSubmit)="salvar()" id="formulario-edicao-viagem" novalidate>
+    <div class="grade-formulario">
+      <div class="campo">
+        <label for="edicao-data-inicio">Data de partida</label>
+        <input id="edicao-data-inicio" type="date" formControlName="dataInicio" [max]="hoje" [attr.aria-invalid]="invalido('dataInicio')">
+      </div>
+      <div class="campo">
+        <label for="edicao-frete">{{ cancelada ? 'Valor recebido (R$)' : 'Valor do frete (R$)' }} <span class="opcional">— opcional</span></label>
+        <input id="edicao-frete" inputmode="decimal" formControlName="valorFrete" [attr.aria-invalid]="invalido('valorFrete')">
+        @if (cancelada) {
+          <p class="ajuda-campo">Entra no financeiro do mês do cancelamento.</p>
+        }
+      </div>
+      <div class="campo">
+        <label for="edicao-origem">Origem</label>
+        <input id="edicao-origem" formControlName="origem" maxlength="120">
+      </div>
+      <div class="campo">
+        <label for="edicao-destino">Destino</label>
+        <input id="edicao-destino" formControlName="destino" maxlength="120">
+      </div>
+      <div class="campo">
+        <label for="edicao-km-vazio">Km na saída vazia <span class="opcional">— se saiu vazio</span></label>
+        <input id="edicao-km-vazio" type="number" inputmode="numeric" formControlName="kmInicialVazio" min="0"
+          [attr.aria-invalid]="invalido('kmInicialVazio')">
+      </div>
+      <div class="campo">
+        <label for="edicao-km-carregado">Km no carregamento</label>
+        <input id="edicao-km-carregado" type="number" inputmode="numeric" formControlName="kmInicialCarregado" min="0"
+          [attr.aria-invalid]="invalido('kmInicialCarregado')">
+      </div>
+      <div class="campo">
+        <label for="edicao-consumo-vazio">Consumo médio vazio (km/L) <span class="opcional">— opcional</span></label>
+        <input id="edicao-consumo-vazio" inputmode="decimal" formControlName="consumoMedioVazio" [attr.aria-invalid]="invalido('consumoMedioVazio')">
+      </div>
+      <div class="campo">
+        <label for="edicao-consumo-carregado">Consumo médio carregado (km/L) <span class="opcional">— opcional</span></label>
+        <input id="edicao-consumo-carregado" inputmode="decimal" formControlName="consumoMedioCarregado" [attr.aria-invalid]="invalido('consumoMedioCarregado')">
+      </div>
+      @if (encerrada) {
+        <div class="campo">
+          <label for="edicao-data-fim">{{ cancelada ? 'Data do cancelamento' : 'Data final' }}</label>
+          <input id="edicao-data-fim" type="date" formControlName="dataFim" [max]="hoje" [attr.aria-invalid]="invalido('dataFim')">
+        </div>
+        <div class="campo">
+          <label for="edicao-km-final">Km na descarga</label>
+          <input id="edicao-km-final" type="number" inputmode="numeric" formControlName="kmFinalCarregado" min="0"
+            [attr.aria-invalid]="invalido('kmFinalCarregado')">
+        </div>
+      }
+      @if (ehDono) {
+        <div class="campo campo-inteiro">
+          <label for="edicao-responsavel">Motorista responsável</label>
+          <select id="edicao-responsavel" formControlName="responsavel">
+            @for (opcao of opcoesResponsavel; track opcao.id) {
+              <option [value]="valorResponsavel(opcao.id)">{{ opcao.rotulo }}</option>
+            }
+          </select>
+        </div>
+      }
+    </div>
+  </form>
+
+  <div rodape>
+    @if (falha().length) {
+      <div class="aviso-formulario aviso-erro" role="alert">
+        <app-icone nome="alerta" [tamanho]="18"></app-icone>
+        <div>
+          @for (detalhe of falha(); track $index) {
+            <p>{{ detalhe }}</p>
+          }
+        </div>
+      </div>
+    }
+    <div class="acoes-janela">
+      <button type="button" class="botao botao-secundario" mat-dialog-close>Cancelar</button>
+      <button type="submit" form="formulario-edicao-viagem" class="botao botao-primario" [disabled]="enviando()">
+        {{ enviando() ? 'Salvando…' : 'Salvar' }}
+      </button>
+    </div>
+  </div>
+</app-janela>

@@ -6,12 +6,13 @@ import { IconeComponent } from './icone/icone.component';
 import { JanelaComponent } from './janela/janela.component';
 import { ConfirmacaoComponent } from './confirmacao/confirmacao.component';
 import { EstadoListaComponent } from './estado-lista/estado-lista.component';
-import { InstantePipe } from './formatacao';
+import { DataPipe, InstantePipe, MoedaPipe, NumeroPipe } from './formatacao';
 
 /** Componentes de interface reutilizados pelas páginas internas. */
 @NgModule({
-  declarations: [IconeComponent, JanelaComponent, ConfirmacaoComponent, EstadoListaComponent, InstantePipe],
+  declarations: [IconeComponent, JanelaComponent, ConfirmacaoComponent, EstadoListaComponent, InstantePipe, MoedaPipe, NumeroPipe, DataPipe],
   imports: [CommonModule, MatDialogModule, MatSnackBarModule],
-  exports: [IconeComponent, JanelaComponent, ConfirmacaoComponent, EstadoListaComponent, InstantePipe, MatDialogModule, MatSnackBarModule]
+  exports: [IconeComponent, JanelaComponent, ConfirmacaoComponent, EstadoListaComponent, InstantePipe, MoedaPipe, NumeroPipe, DataPipe,
+    MatDialogModule, MatSnackBarModule]
 })
 export class CompartilhadoModule {}

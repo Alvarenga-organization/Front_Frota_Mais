@@ -28,3 +28,44 @@ export const inteiroValidator: ValidatorFn = (controle: AbstractControl): Valida
   if (valor === null || valor === undefined || valor === '') return null;
   return Number.isInteger(Number(valor)) ? null : { inteiro: true };
 };
+
+/**
+ * Converte o número digitado ("1.500,50", "1500.5", "250,5") para o texto aceito pela
+ * API ("1500.50" / "250.5"). Devolve `null` se vazio ou inválido. Não arredonda:
+ * mais casas que o permitido torna o valor inválido.
+ */
+export function paraDecimalApi(valor: unknown, casas: number): string | null {
+  if (valor === null || valor === undefined) return null;
+  let texto = String(valor).trim().replace(/\s/g, '');
+  if (!texto) return null;
+  if (texto.includes(',')) texto = texto.replace(/\./g, '').replace(',', '.');
+  const padrao = new RegExp(`^\\d+(\\.\\d{1,${casas}})?$`);
+  return padrao.test(texto) ? texto : null;
+}
+
+/**
+ * Decimal positivo digitado pelo usuário: até `casas` casas e `inteiros` dígitos
+ * antes da vírgula; maior que zero. Vazio é tratado pelo `required`.
+ */
+export function decimalPositivoValidator(casas: number, inteiros: number, maximo?: number): ValidatorFn {
+  return (controle: AbstractControl): ValidationErrors | null => {
+    const bruto = controle.value;
+    if (bruto === null || bruto === undefined || String(bruto).trim() === '') return null;
+    const texto = paraDecimalApi(bruto, casas);
+    if (texto === null) return { decimal: { casas } };
+    const [parteInteira] = texto.split('.');
+    const numero = Number(texto);
+    if (parteInteira.replace(/^0+(?=\d)/, '').length > inteiros) return { decimal: { casas } };
+    if (numero <= 0) return { positivo: true };
+    if (maximo !== undefined && numero > maximo) return { maximo: { maximo } };
+    return null;
+  };
+}
+
+/** Limites de formato do contrato (seção de convenções da API). */
+export const FORMATO = {
+  dinheiro: { casas: 2, inteiros: 15 },
+  litros: { casas: 3, inteiros: 7 },
+  consumo: { casas: 2, inteiros: 2, maximo: 99.99 },
+  km: { minimo: 0, maximo: 9_999_999 }
+} as const;
