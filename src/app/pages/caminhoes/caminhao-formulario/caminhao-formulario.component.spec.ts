@@ -1,24 +1,33 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { CaminhoesModule } from '../caminhoes.module';
 import { CaminhaoFormularioComponent, DadosFormularioCaminhao } from './caminhao-formulario.component';
 import { paraCaminhaoRequest, valoresIniciaisCaminhao } from './caminhao-formulario';
 import { AvisoService } from '../../../compartilhado/aviso.service';
-import { CAMINHOES_DONO_MOCK } from '../../../demonstracao/caminhoes.mock';
+import { CAMINHOES_DONO_MOCK } from '../../../../testes/dados/caminhoes.mock';
 
 describe('CaminhaoFormularioComponent', () => {
   let aviso: jasmine.SpyObj<AvisoService>;
+  let fechar: jasmine.Spy;
+  let controle: HttpTestingController;
+
+  afterEach(() => controle?.verify());
 
   function criar(dados: DadosFormularioCaminhao) {
-    aviso = jasmine.createSpyObj<AvisoService>('AvisoService', ['integracaoPendente', 'mostrar']);
+    aviso = jasmine.createSpyObj<AvisoService>('AvisoService', ['falha', 'mostrar']);
+    fechar = jasmine.createSpy('close');
     TestBed.configureTestingModule({
       imports: [CaminhoesModule],
       providers: [
+        provideHttpClient(), provideHttpClientTesting(),
         { provide: MAT_DIALOG_DATA, useValue: dados },
-        { provide: MatDialogRef, useValue: { close: jasmine.createSpy('close') } },
+        { provide: MatDialogRef, useValue: { close: fechar } },
         { provide: AvisoService, useValue: aviso }
       ]
     });
+    controle = TestBed.inject(HttpTestingController);
     const fixture = TestBed.createComponent(CaminhaoFormularioComponent);
     fixture.detectChanges();
     return fixture;
@@ -67,20 +76,54 @@ describe('CaminhaoFormularioComponent', () => {
   it('não envia nada com o formulário inválido', () => {
     const { componentInstance: c } = criar({ modo: 'novo', caminhao: null });
     c.salvar();
-    expect(c.ultimoRequest).toBeNull();
-    expect(aviso.integracaoPendente).not.toHaveBeenCalled();
+    controle.expectNone('/api/caminhoes');
   });
 
-  it('com dados válidos monta o CaminhaoRequest e avisa que nada foi gravado', () => {
+  it('novo: POST /api/caminhoes com o CaminhaoRequest e fecha a janela com sucesso', () => {
     const fixture = criar({ modo: 'novo', caminhao: null });
     preencherValido(fixture.componentInstance);
     fixture.componentInstance.salvar();
-    fixture.detectChanges();
-    expect(fixture.componentInstance.ultimoRequest).toEqual({
+    const req = controle.expectOne('/api/caminhoes');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({
       placa: 'abc-1d23', marca: 'Volvo', modelo: 'FH 540', ano: 2022, eixos: 6, status: 'ATIVO', capacidadeTanqueLitros: null
     });
-    expect(aviso.integracaoPendente).toHaveBeenCalledWith('Cadastrar caminhão');
-    expect(fixture.nativeElement.textContent).toContain('Nada foi gravado');
+    req.flush({ ...CAMINHOES_DONO_MOCK[0], placa: 'ABC1D23' }, { status: 201, statusText: 'Created' });
+    expect(fechar).toHaveBeenCalledWith(true);
+    expect(aviso.mostrar).toHaveBeenCalledWith('Caminhão ABC1D23 cadastrado.');
+  });
+
+  it('409 (placa duplicada): mostra a mensagem do servidor e mantém a janela aberta', () => {
+    const fixture = criar({ modo: 'novo', caminhao: null });
+    preencherValido(fixture.componentInstance);
+    fixture.componentInstance.salvar();
+    controle.expectOne('/api/caminhoes').flush(
+      { status: 409, erro: 'Conflito de dados', detalhes: ['Já existe um caminhão com esta placa.'] }, { status: 409, statusText: 'Conflict' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain('Já existe um caminhão com esta placa.');
+    expect(fechar).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.enviando()).toBeFalse();
+  });
+
+  it('impede envio duplicado durante a requisição', () => {
+    const fixture = criar({ modo: 'novo', caminhao: null });
+    preencherValido(fixture.componentInstance);
+    fixture.componentInstance.salvar();
+    fixture.componentInstance.salvar();
+    controle.expectOne('/api/caminhoes').flush(CAMINHOES_DONO_MOCK[0], { status: 201, statusText: 'Created' });
+  });
+
+  it('edição: PUT /api/caminhoes/{id} com todos os campos e o status', () => {
+    const caminhao = CAMINHOES_DONO_MOCK.find(c => c.placa === 'QIT2E40')!;
+    const fixture = criar({ modo: 'editar', caminhao });
+    fixture.componentInstance.formulario.controls.modelo.setValue('R450');
+    fixture.componentInstance.salvar();
+    const req = controle.expectOne(`/api/caminhoes/${caminhao.id}`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ ...paraCaminhaoRequest(valoresIniciaisCaminhao(caminhao)), modelo: 'R450' });
+    expect(req.request.body.status).toBeDefined();
+    req.flush(caminhao);
+    expect(fechar).toHaveBeenCalledWith(true);
   });
 
   it('na edição pré-preenche todos os campos atuais (PUT integral)', () => {

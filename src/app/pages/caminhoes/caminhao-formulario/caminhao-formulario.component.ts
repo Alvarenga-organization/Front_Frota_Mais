@@ -1,7 +1,11 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { CaminhaoRequest, CaminhaoResponse, StatusCaminhaoEditavel } from '../../../core/modelos/api.modelos';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { finalize } from 'rxjs';
+import { CaminhaoResponse, StatusCaminhaoEditavel } from '../../../core/modelos/api.modelos';
+import { CaminhoesService } from '../../../core/api/caminhoes.service';
+import { normalizarFalha } from '../../../core/http/falha-api';
 import { AvisoService } from '../../../compartilhado/aviso.service';
 import { ROTULO_STATUS_CAMINHAO } from '../../../compartilhado/formatacao';
 import { inteiroValidator } from '../../../compartilhado/validadores';
@@ -30,7 +34,10 @@ export interface DadosFormularioCaminhao {
 })
 export class CaminhaoFormularioComponent {
   readonly dados = inject<DadosFormularioCaminhao>(MAT_DIALOG_DATA);
+  private readonly ref = inject<MatDialogRef<CaminhaoFormularioComponent, boolean>>(MatDialogRef);
+  private readonly servico = inject(CaminhoesService);
   private readonly aviso = inject(AvisoService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly limites = LIMITES_CAMINHAO;
   readonly statusEditaveis = STATUS_EDITAVEIS;
@@ -38,12 +45,10 @@ export class CaminhaoFormularioComponent {
   readonly somenteLeitura = this.dados.modo === 'visualizar';
   readonly cadastroIncompleto = this.dados.caminhao !== null && caminhaoCadastroIncompleto(this.dados.caminhao);
 
-  /** Processando o envio (fica ativo durante a requisição, quando houver integração). */
+  /** Requisição em andamento: desabilita o envio (evita cadastro duplicado). */
   readonly enviando = signal(false);
-  /** Mensagem exibida no rodapé após tentar salvar sem integração. */
-  readonly integracaoPendente = signal(false);
-  /** Último corpo montado; será enviado pelo serviço HTTP na integração. */
-  ultimoRequest: CaminhaoRequest | null = null;
+  /** `detalhes` do servidor (400 validação, 409 placa duplicada / viagem em andamento, 403, 404...). */
+  readonly falha = signal<string[]>([]);
 
   readonly formulario = inject(FormBuilder).group({
     placa: ['', [Validators.required, Validators.maxLength(LIMITES_CAMINHAO.placaMaxDigitada), placaValidator]],
@@ -77,13 +82,14 @@ export class CaminhaoFormularioComponent {
   }
 
   salvar(): void {
-    this.integracaoPendente.set(false);
+    if (this.enviando() || this.somenteLeitura) return;
+    this.falha.set([]);
     if (this.formulario.invalid) {
       this.formulario.markAllAsTouched();
       return;
     }
     const valor = this.formulario.getRawValue();
-    this.ultimoRequest = paraCaminhaoRequest({
+    const corpo = paraCaminhaoRequest({
       placa: valor.placa ?? '',
       marca: valor.marca ?? '',
       modelo: valor.modelo ?? '',
@@ -92,9 +98,17 @@ export class CaminhaoFormularioComponent {
       capacidadeTanqueLitros: valor.capacidadeTanqueLitros,
       status: valor.status ?? 'ATIVO'
     });
-    // Integração futura: POST /api/caminhoes (novo) ou PUT /api/caminhoes/{id} (editar),
-    // tratando 409 (placa duplicada; viagem em andamento ao inativar).
-    this.integracaoPendente.set(true);
-    this.aviso.integracaoPendente(this.dados.modo === 'novo' ? 'Cadastrar caminhão' : 'Salvar caminhão');
+    const caminhao = this.dados.caminhao;
+    const operacao = this.dados.modo === 'novo' || !caminhao
+      ? this.servico.criar(corpo)
+      : this.servico.atualizar(caminhao.id, corpo);
+    this.enviando.set(true);
+    operacao.pipe(finalize(() => this.enviando.set(false)), takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: salvo => {
+        this.aviso.mostrar(this.dados.modo === 'novo' ? `Caminhão ${salvo.placa} cadastrado.` : `Caminhão ${salvo.placa} salvo.`);
+        this.ref.close(true);
+      },
+      error: erro => this.falha.set(normalizarFalha(erro).detalhes)
+    });
   }
 }

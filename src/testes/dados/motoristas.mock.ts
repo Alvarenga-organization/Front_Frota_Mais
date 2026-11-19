@@ -1,9 +1,8 @@
 /**
- * DADOS DE DEMONSTRAÇÃO — fictícios (domínio exemplo.com).
- * Usados só enquanto a integração com a API não existe; serão substituídos
- * pelas respostas de GET /api/motoristas. Tipados com o DTO oficial.
+ * DADOS DE TESTE: fictícios, usados só nos testes automatizados (nunca no app).
+ * Tipados com o DTO oficial, no formato de GET /api/motoristas.
  */
-import { MotoristaResponse } from '../core/modelos/api.modelos';
+import { MotoristaResponse } from '../../app/core/modelos/api.modelos';
 
 /** Ordem por nome, como a API devolve. */
 export const MOTORISTAS_MOCK: MotoristaResponse[] = [

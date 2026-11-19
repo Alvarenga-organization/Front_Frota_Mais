@@ -1,9 +1,8 @@
 /**
- * DADOS DE DEMONSTRAÇÃO — fictícios, sem relação com dados reais.
- * Usados só enquanto a integração com a API não existe; serão substituídos
- * pelas respostas de GET /api/caminhoes. Tipados com o DTO oficial.
+ * DADOS DE TESTE: fictícios, usados só nos testes automatizados (nunca no app).
+ * Tipados com o DTO oficial, no formato de GET /api/caminhoes.
  */
-import { CaminhaoResponse } from '../core/modelos/api.modelos';
+import { CaminhaoResponse } from '../../app/core/modelos/api.modelos';
 
 /**
  * Resposta que o servidor daria ao DONO com `incluirExcluidos=true`.

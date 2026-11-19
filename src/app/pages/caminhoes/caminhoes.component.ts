@@ -1,17 +1,18 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { map } from 'rxjs';
+import { Observable, finalize, map } from 'rxjs';
 import { CaminhaoResponse, StatusCaminhao } from '../../core/modelos/api.modelos';
 import { SessaoService } from '../../core/sessao/sessao.service';
+import { CaminhoesService } from '../../core/api/caminhoes.service';
+import { normalizarFalha } from '../../core/http/falha-api';
 import { AvisoService } from '../../compartilhado/aviso.service';
 import { EstadoCarga } from '../../compartilhado/estado-lista/estado-lista.component';
 import { ConfirmacaoComponent, DadosConfirmacao } from '../../compartilhado/confirmacao/confirmacao.component';
 import { JanelasService } from '../../compartilhado/janela/janelas.service';
 import { ROTULO_STATUS_CAMINHAO } from '../../compartilhado/formatacao';
-import { CAMINHOES_DONO_MOCK, CAMINHOES_MOTORISTA_MOCK } from '../../demonstracao/caminhoes.mock';
 import { CaminhaoFormularioComponent, DadosFormularioCaminhao } from './caminhao-formulario/caminhao-formulario.component';
-import { caminhaoCadastroIncompleto } from './caminhao-formulario/caminhao-formulario';
+import { caminhaoCadastroIncompleto, paraCaminhaoRequest, valoresIniciaisCaminhao } from './caminhao-formulario/caminhao-formulario';
 
 const CLASSE_SELO: Record<StatusCaminhao, string> = {
   ATIVO: 'selo',
@@ -29,8 +30,10 @@ const CLASSE_SELO: Record<StatusCaminhao, string> = {
 })
 export class CaminhoesComponent {
   private readonly sessao = inject(SessaoService);
+  private readonly servico = inject(CaminhoesService);
   private readonly janelas = inject(JanelasService);
   private readonly aviso = inject(AvisoService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly ehDono = this.sessao.ehDono;
   readonly rotuloStatus = ROTULO_STATUS_CAMINHAO;
@@ -43,15 +46,16 @@ export class CaminhoesComponent {
   readonly estado = signal<EstadoCarga>('carregando');
   readonly detalhesFalha = signal<string[]>([]);
   private readonly caminhoes = signal<CaminhaoResponse[]>([]);
+  /** Uma operação (inativar, reativar, excluir) em andamento: bloqueia novas ações. */
+  readonly processando = signal(false);
 
-  /** Equivale ao parâmetro `incluirExcluidos` (só o DONO; o servidor ignora para o MOTORISTA). */
+  /** Parâmetro `incluirExcluidos` (só o DONO; o servidor ignora para o MOTORISTA). */
   readonly incluirExcluidos = signal(false);
   readonly busca = signal('');
 
   readonly visiveis = computed(() => {
     const termo = this.busca().trim().toLowerCase();
     return this.caminhoes()
-      .filter(c => this.incluirExcluidos() || c.status !== 'EXCLUIDO')
       .filter(c => !termo || [c.placa, c.marca ?? '', c.modelo].some(t => t.toLowerCase().includes(termo)));
   });
 
@@ -61,15 +65,27 @@ export class CaminhoesComponent {
     this.carregar();
   }
 
-  /**
-   * Ponto de troca para a integração: substituir pelos dados de GET /api/caminhoes
-   * (com `incluirExcluidos=true` quando a opção estiver marcada).
-   */
+  /** GET /api/caminhoes (com `incluirExcluidos=true` quando a opção está marcada). */
   carregar(): void {
     this.estado.set('carregando');
-    const dados = this.ehDono() ? CAMINHOES_DONO_MOCK : CAMINHOES_MOTORISTA_MOCK;
-    this.caminhoes.set(dados);
-    this.estado.set(dados.length ? 'sucesso' : 'vazio');
+    this.detalhesFalha.set([]);
+    this.servico.listar(this.ehDono() && this.incluirExcluidos())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: lista => {
+          this.caminhoes.set(lista);
+          this.estado.set(lista.length ? 'sucesso' : 'vazio');
+        },
+        error: erro => {
+          this.detalhesFalha.set(normalizarFalha(erro).detalhes);
+          this.estado.set('falha');
+        }
+      });
+  }
+
+  alternarExcluidos(marcado: boolean): void {
+    this.incluirExcluidos.set(marcado);
+    this.carregar();
   }
 
   /** Caminhões antigos podem vir sem marca (o servidor aceita nulo até a próxima edição). */
@@ -86,16 +102,20 @@ export class CaminhoesComponent {
     this.abrirFormulario({ modo: podeEditar ? 'editar' : 'visualizar', caminhao });
   }
 
-  /** Inativar/reativar é um PUT com todos os campos e o novo status. */
+  /** Inativar/reativar é um PUT com todos os campos atuais e o novo status. */
   alternarStatus(caminhao: CaminhaoResponse): void {
+    if (this.processando()) return;
     const novoStatus = caminhao.status === 'ATIVO' ? 'INATIVO' : 'ATIVO';
     if (caminhaoCadastroIncompleto(caminhao)) {
       // O PUT exige marca e eixos: o usuário completa o cadastro no formulário.
       this.abrirFormulario({ modo: 'editar', caminhao, statusSugerido: novoStatus });
       return;
     }
+    const corpo = paraCaminhaoRequest({ ...valoresIniciaisCaminhao(caminhao), status: novoStatus });
+    const enviar = () => this.executar(this.servico.atualizar(caminhao.id, corpo),
+      novoStatus === 'ATIVO' ? `Caminhão ${caminhao.placa} reativado.` : `Caminhão ${caminhao.placa} inativado.`);
     if (novoStatus === 'ATIVO') {
-      this.aviso.integracaoPendente('Reativar caminhão');
+      enviar();
       return;
     }
     this.confirmar({
@@ -106,11 +126,12 @@ export class CaminhoesComponent {
         'Você pode reativá-lo depois.'
       ],
       textoConfirmar: 'Inativar'
-    }, () => this.aviso.integracaoPendente('Inativar caminhão'));
+    }, enviar);
   }
 
   /** Exclusão lógica (DELETE /api/caminhoes/{id}). */
   excluir(caminhao: CaminhaoResponse): void {
+    if (this.processando()) return;
     this.confirmar({
       titulo: `Excluir o caminhão ${caminhao.placa}?`,
       paragrafos: [
@@ -121,11 +142,33 @@ export class CaminhoesComponent {
       ],
       textoConfirmar: 'Excluir caminhão',
       perigo: true
-    }, () => this.aviso.integracaoPendente('Excluir caminhão'));
+    }, () => this.executar(this.servico.excluir(caminhao.id), `Caminhão ${caminhao.placa} excluído.`));
+  }
+
+  /**
+   * Executa a operação e recarrega a lista no fim, com sucesso ou falha
+   * (em 403/404/409 o estado no servidor pode ter mudado).
+   */
+  private executar(operacao: Observable<unknown>, mensagemSucesso: string): void {
+    this.processando.set(true);
+    operacao.pipe(finalize(() => this.processando.set(false)), takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.aviso.mostrar(mensagemSucesso);
+        this.carregar();
+      },
+      error: erro => {
+        this.aviso.falha(erro);
+        this.carregar();
+      }
+    });
   }
 
   private abrirFormulario(dados: DadosFormularioCaminhao): void {
-    this.janelas.abrir(CaminhaoFormularioComponent, dados);
+    this.janelas.abrir<CaminhaoFormularioComponent, DadosFormularioCaminhao, boolean>(CaminhaoFormularioComponent, dados)
+      .afterClosed()
+      .subscribe(salvou => {
+        if (salvou) this.carregar();
+      });
   }
 
   private confirmar(dados: DadosConfirmacao, aoConfirmar: () => void): void {

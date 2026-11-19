@@ -603,6 +603,15 @@ code {
     line-height: 1.5;
 }
 
+.aviso-formulario.aviso-erro {
+    background: #fdecea;
+    color: #8c1d18;
+}
+
+.aviso-formulario p {
+    margin: 0;
+}
+
 /* ---------- Botões das janelas ---------- */
 
 .acoes-janela {

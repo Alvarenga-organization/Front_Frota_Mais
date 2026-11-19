@@ -21,11 +21,4 @@ export class AvisoService {
     return falha;
   }
 
-  /**
-   * @deprecated Transitório: usado só pelas telas ainda não integradas (removido na integração delas).
-   * Deixa claro que nada foi gravado (nunca simula sucesso).
-   */
-  integracaoPendente(acao: string): void {
-    this.mostrar(`${acao}: a comunicação com o servidor ainda não foi integrada. Nada foi gravado.`);
-  }
 }

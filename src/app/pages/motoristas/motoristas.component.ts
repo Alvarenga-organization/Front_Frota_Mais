@@ -1,15 +1,16 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { map } from 'rxjs';
+import { Observable, finalize, forkJoin, map } from 'rxjs';
 import { CaminhaoResponse, MotoristaResponse, SituacaoMotorista } from '../../core/modelos/api.modelos';
+import { MotoristasService } from '../../core/api/motoristas.service';
+import { CaminhoesService } from '../../core/api/caminhoes.service';
+import { normalizarFalha } from '../../core/http/falha-api';
 import { AvisoService } from '../../compartilhado/aviso.service';
 import { EstadoCarga } from '../../compartilhado/estado-lista/estado-lista.component';
 import { ConfirmacaoComponent, DadosConfirmacao } from '../../compartilhado/confirmacao/confirmacao.component';
 import { JanelasService } from '../../compartilhado/janela/janelas.service';
 import { ROTULO_SITUACAO_MOTORISTA, formatarInstante } from '../../compartilhado/formatacao';
-import { CAMINHOES_DONO_MOCK } from '../../demonstracao/caminhoes.mock';
-import { MOTORISTAS_MOCK } from '../../demonstracao/motoristas.mock';
 import { DadosFormularioMotorista, MotoristaFormularioComponent } from './motorista-formulario/motorista-formulario.component';
 import { DadosVinculos, VinculosComponent } from './vinculos/vinculos.component';
 
@@ -31,8 +32,11 @@ export type FiltroSituacao = SituacaoMotorista | 'TODAS';
   templateUrl: './motoristas.component.html'
 })
 export class MotoristasComponent {
+  private readonly servico = inject(MotoristasService);
+  private readonly caminhoesServico = inject(CaminhoesService);
   private readonly janelas = inject(JanelasService);
   private readonly aviso = inject(AvisoService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly rotuloSituacao = ROTULO_SITUACAO_MOTORISTA;
   readonly classeSelo = CLASSE_SELO;
@@ -60,20 +64,33 @@ export class MotoristasComponent {
   });
 
   readonly total = computed(() => this.motoristas().length);
+  /** Reenviar/cancelar convite em andamento: bloqueia novas ações. */
+  readonly processando = signal(false);
 
   constructor() {
     this.carregar();
   }
 
   /**
-   * Ponto de troca para a integração: GET /api/motoristas e
-   * GET /api/caminhoes?incluirExcluidos=true (para exibir as placas).
+   * GET /api/motoristas e GET /api/caminhoes?incluirExcluidos=true (para exibir as
+   * placas, inclusive de caminhões excluídos que ficaram vinculados).
    */
   carregar(): void {
     this.estado.set('carregando');
-    this.caminhoes.set(CAMINHOES_DONO_MOCK);
-    this.motoristas.set(MOTORISTAS_MOCK);
-    this.estado.set(MOTORISTAS_MOCK.length ? 'sucesso' : 'vazio');
+    this.detalhesFalha.set([]);
+    forkJoin({ motoristas: this.servico.listar(), caminhoes: this.caminhoesServico.listar(true) })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ motoristas, caminhoes }) => {
+          this.caminhoes.set(caminhoes);
+          this.motoristas.set(motoristas);
+          this.estado.set(motoristas.length ? 'sucesso' : 'vazio');
+        },
+        error: erro => {
+          this.detalhesFalha.set(normalizarFalha(erro).detalhes);
+          this.estado.set('falha');
+        }
+      });
   }
 
   /** Placas vinculadas; caminhão excluído aparece sinalizado. */
@@ -101,17 +118,20 @@ export class MotoristasComponent {
   }
 
   novo(): void {
-    this.janelas.abrir<MotoristaFormularioComponent, DadosFormularioMotorista>(
-      MotoristaFormularioComponent, { motorista: null, caminhoes: this.caminhoes() });
+    this.janelas.abrir<MotoristaFormularioComponent, DadosFormularioMotorista, boolean>(
+      MotoristaFormularioComponent, { motorista: null, caminhoes: this.caminhoes() })
+      .afterClosed().subscribe(salvou => this.recarregarSe(salvou));
   }
 
   editar(motorista: MotoristaResponse): void {
-    this.janelas.abrir<MotoristaFormularioComponent, DadosFormularioMotorista>(
-      MotoristaFormularioComponent, { motorista, caminhoes: this.caminhoes() }, 720);
+    this.janelas.abrir<MotoristaFormularioComponent, DadosFormularioMotorista, boolean>(
+      MotoristaFormularioComponent, { motorista, caminhoes: this.caminhoes() }, 720)
+      .afterClosed().subscribe(salvou => this.recarregarSe(salvou));
   }
 
   vinculos(motorista: MotoristaResponse): void {
-    this.janelas.abrir<VinculosComponent, DadosVinculos>(VinculosComponent, { motorista, caminhoes: this.caminhoes() });
+    this.janelas.abrir<VinculosComponent, DadosVinculos, boolean>(VinculosComponent, { motorista, caminhoes: this.caminhoes() })
+      .afterClosed().subscribe(salvou => this.recarregarSe(salvou));
   }
 
   /** POST /api/motoristas/{id}/convite. */
@@ -123,7 +143,7 @@ export class MotoristasComponent {
         'O link enviado antes deixa de valer.'
       ],
       textoConfirmar: 'Reenviar convite'
-    }, () => this.aviso.integracaoPendente('Reenviar convite'));
+    }, () => this.executar(this.servico.reenviarConvite(motorista.id), `Convite reenviado para ${motorista.email}.`));
   }
 
   /** DELETE /api/motoristas/{id}/convite. */
@@ -136,7 +156,27 @@ export class MotoristasComponent {
       ],
       textoConfirmar: 'Cancelar convite',
       perigo: true
-    }, () => this.aviso.integracaoPendente('Cancelar convite'));
+    }, () => this.executar(this.servico.cancelarConvite(motorista.id), `Convite de ${motorista.nome} cancelado.`));
+  }
+
+  private recarregarSe(salvou: boolean | undefined): void {
+    if (salvou) this.carregar();
+  }
+
+  /** Executa e recarrega no fim (409/403/404 indicam que o estado mudou no servidor; 503 = e-mail indisponível). */
+  private executar(operacao: Observable<void>, mensagemSucesso: string): void {
+    if (this.processando()) return;
+    this.processando.set(true);
+    operacao.pipe(finalize(() => this.processando.set(false)), takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.aviso.mostrar(mensagemSucesso);
+        this.carregar();
+      },
+      error: erro => {
+        this.aviso.falha(erro);
+        this.carregar();
+      }
+    });
   }
 
   private confirmar(dados: DadosConfirmacao, aoConfirmar: () => void): void {
