@@ -9,6 +9,14 @@
 } @else {
   <p class="descricao">Crie a sua senha para começar a usar o Frota+</p>
 
+  @if (falha().length) {
+    <div class="alerta-servidor" role="alert">
+      @for (detalhe of falha(); track $index) {
+        <p>{{ detalhe }}</p>
+      }
+    </div>
+  }
+
   <form [formGroup]="formulario" (ngSubmit)="ativar()" novalidate>
     <div class="campos">
       <div>
@@ -29,7 +37,7 @@
     </div>
 
     <div class="botoes">
-      <button type="submit" class="botao-primario">Ativar conta</button>
+      <button type="submit" class="botao-primario" [disabled]="enviando()">{{ enviando() ? 'Ativando…' : 'Ativar conta' }}</button>
     </div>
   </form>
 }

@@ -28,6 +28,7 @@ const routes: Routes = [
       { path: 'motoristas', loadChildren: () => import('./pages/motoristas/motoristas.module').then(m => m.MotoristasModule), data: { titulo: 'Motoristas', perfis: ['DONO'] } },
       { path: 'viagens', loadChildren: () => import('./pages/viagens/viagens.module').then(m => m.ViagensModule), data: { titulo: 'Viagens' } },
       { path: 'relatorios', loadChildren: () => import('./pages/relatorios/relatorios.module').then(m => m.RelatoriosModule), data: { titulo: 'Relatórios', perfis: ['DONO'] } },
+      { path: 'conta', loadChildren: () => import('./pages/conta/conta.module').then(m => m.ContaModule), data: { titulo: 'Conta' } },
       { path: 'manutencao', loadChildren: () => import('./pages/manutencao/manutencao.module').then(m => m.ManutencaoModule), data: { titulo: 'Manutenções', perfis: ['DONO'] } }
     ]
   },

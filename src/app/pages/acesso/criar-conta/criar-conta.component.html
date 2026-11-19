@@ -1,6 +1,14 @@
 <h1>Bem-vindo(a)!</h1>
 <p class="descricao">Crie a conta da sua empresa para controlar a sua frota</p>
 
+@if (falha().length) {
+  <div class="alerta-servidor" role="alert">
+    @for (detalhe of falha(); track $index) {
+      <p>{{ detalhe }}</p>
+    }
+  </div>
+}
+
 <form [formGroup]="formulario" (ngSubmit)="criar()" novalidate>
   <div class="campos">
     <div>
@@ -59,7 +67,7 @@
   </div>
 
   <div class="botoes">
-    <button type="submit" class="botao-primario">Criar conta</button>
+    <button type="submit" class="botao-primario" [disabled]="enviando()">{{ enviando() ? 'Criando…' : 'Criar conta' }}</button>
     <a routerLink="/login" class="botao-secundario">Já tenho conta</a>
   </div>
 </form>

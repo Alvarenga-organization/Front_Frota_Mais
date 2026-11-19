@@ -1,6 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, Validators } from '@angular/forms';
-import { AvisoService } from '../../../compartilhado/aviso.service';
+import { Router } from '@angular/router';
+import { finalize } from 'rxjs';
+import { AuthService } from '../../../core/api/auth.service';
+import { normalizarFalha } from '../../../core/http/falha-api';
 import { senhaNovaValidator } from '../../../compartilhado/validadores';
 
 @Component({
@@ -10,7 +14,9 @@ import { senhaNovaValidator } from '../../../compartilhado/validadores';
   styleUrls: ['../acesso-formulario.css', '../campo-acesso.css']
 })
 export class CriarContaComponent {
-  private readonly aviso = inject(AvisoService);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   // Campos de RegistroRequest. "Nome da empresa" não está no Figma, mas é obrigatório na API.
   readonly formulario = inject(FormBuilder).nonNullable.group({
@@ -20,12 +26,30 @@ export class CriarContaComponent {
     senha: ['', [Validators.required, senhaNovaValidator]]
   });
 
+  readonly enviando = signal(false);
+  readonly falha = signal<string[]>([]);
+
   criar(): void {
+    if (this.enviando()) return;
     if (this.formulario.invalid) {
       this.formulario.markAllAsTouched();
       return;
     }
-    // Integração futura: POST /api/auth/registro (já autentica); 409 = e-mail já cadastrado.
-    this.aviso.integracaoPendente('Criar conta');
+    this.enviando.set(true);
+    this.falha.set([]);
+    const valor = this.formulario.getRawValue();
+    this.auth.registrar({
+      nomeEmpresa: valor.nomeEmpresa.trim(),
+      nome: valor.nome.trim(),
+      email: valor.email.trim(),
+      senha: valor.senha
+    })
+      .pipe(finalize(() => this.enviando.set(false)), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        // O registro já autentica: o DONO entra direto.
+        next: () => this.router.navigateByUrl('/inicio'),
+        // 409 = e-mail já cadastrado; 400 = validação (ex.: senha fraca).
+        error: erro => this.falha.set(normalizarFalha(erro).detalhes)
+      });
   }
 }

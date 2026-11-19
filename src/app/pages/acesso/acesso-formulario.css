@@ -61,8 +61,13 @@ form {
     border: 0;
 }
 
-.botao-primario:hover {
+.botao-primario:hover:not(:disabled) {
     background: #084bb6;
+}
+
+.botao-primario:disabled {
+    opacity: 0.6;
+    cursor: progress;
 }
 
 .botao-secundario {
@@ -108,41 +113,23 @@ form {
 }
 
 /* Bloco do modo demonstração: fora do design do Figma e removível. */
-.demonstracao {
-    margin: 40px 0 0 12px;
-    padding: 16px;
-    border: 1px dashed #b8c4d4;
-    border-radius: 12px;
-    background: #f8fafc;
+.alerta-servidor {
+    margin: 0 0 24px 12px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: #fdecea;
+    color: #8c1d18;
+    font-size: 14px;
+    line-height: 1.5;
 }
 
-.demonstracao strong {
-    display: block;
-    font-size: 13px;
+.alerta-servidor.informativo {
+    background: #EDF2FA;
     color: #1b3045;
 }
 
-.demonstracao p {
-    margin: 4px 0 12px;
-    font-size: 13px;
-    line-height: 1.5;
-    color: #586a7f;
-}
-
-.demonstracao-acoes {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.demonstracao-acoes button {
-    border: 1px solid #0A56D0;
-    background: #ffffff;
-    color: #0A56D0;
-    border-radius: 8px;
-    padding: 8px 14px;
-    font-size: 13px;
-    cursor: pointer;
+.alerta-servidor p {
+    margin: 0;
 }
 
 @media (max-width: 767px) {
@@ -160,7 +147,7 @@ form {
     .campos,
     .botoes,
     .observacao,
-    .demonstracao {
+    .alerta-servidor {
         margin-left: 0;
     }
 

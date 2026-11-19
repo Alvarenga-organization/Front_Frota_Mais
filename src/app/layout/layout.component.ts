@@ -1,9 +1,11 @@
 import { Component, computed, inject } from '@angular/core';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
 import { map, shareReplay } from 'rxjs';
 import { Perfil } from '../core/modelos/api.modelos';
 import { SessaoService } from '../core/sessao/sessao.service';
+import { AuthService } from '../core/api/auth.service';
 
 interface ItemMenu {
   rota: string;
@@ -28,9 +30,11 @@ const ITENS_MENU: ItemMenu[] = [
 })
 export class LayoutComponent {
   private readonly sessao = inject(SessaoService);
+  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
 
-  readonly demonstracao = computed(() => this.sessao.sessao()?.demonstracao === true);
+  readonly nome = this.sessao.nome;
 
   // Usados pelo menu lateral (desktop) e pela navegação inferior (celular).
   readonly itensMenu = computed(() => {
@@ -43,8 +47,10 @@ export class LayoutComponent {
     .observe('(max-width: 767px)')
     .pipe(map(result => result.matches), shareReplay({ bufferSize: 1, refCount: true }));
 
+  /** Logout local: descarta a sessão e fecha janelas abertas (nada fica para o próximo usuário). */
   sair(): void {
-    this.sessao.encerrar();
+    this.dialog.closeAll();
+    this.auth.sair();
     this.router.navigateByUrl('/login');
   }
 }
