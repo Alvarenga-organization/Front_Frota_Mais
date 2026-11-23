@@ -1,0 +1,65 @@
+<header class="cabecalho-pagina">
+  <h1>Conta</h1>
+  <p>{{ nome() }} · {{ perfil() }}</p>
+</header>
+
+<section class="cartao-lista cartao-conta" aria-labelledby="titulo-senha">
+  <div class="cartao-lista-topo">
+    <div>
+      <h2 id="titulo-senha">Trocar senha</h2>
+      <p class="contagem">A troca não encerra sessões já abertas em outros aparelhos.</p>
+    </div>
+  </div>
+
+  <form [formGroup]="formulario" (ngSubmit)="trocarSenha()" novalidate class="corpo-conta">
+    @if (sucesso()) {
+      <p class="aviso-sucesso" role="status">Senha alterada.</p>
+    }
+    @if (falha().length) {
+      <div class="aviso-formulario" role="alert">
+        @for (detalhe of falha(); track $index) {
+          <span>{{ detalhe }}</span>
+        }
+      </div>
+    }
+
+    <div class="grade-formulario">
+      <div class="campo campo-inteiro">
+        <label for="conta-senha-atual">Senha atual</label>
+        <input id="conta-senha-atual" type="password" formControlName="senhaAtual" autocomplete="current-password"
+          [attr.aria-invalid]="invalido('senhaAtual')" aria-describedby="conta-senha-atual-erro">
+        @if (invalido('senhaAtual')) {
+          <p class="erro-campo-formulario" id="conta-senha-atual-erro">Informe a senha atual.</p>
+        }
+      </div>
+      <div class="campo">
+        <label for="conta-nova-senha">Nova senha</label>
+        <input id="conta-nova-senha" type="password" formControlName="novaSenha" autocomplete="new-password"
+          [attr.aria-invalid]="invalido('novaSenha')" aria-describedby="conta-nova-senha-ajuda">
+        <p class="ajuda-campo" id="conta-nova-senha-ajuda" [class.erro-campo-formulario]="invalido('novaSenha')">
+          Mínimo de 8 caracteres, com pelo menos uma letra e um número.
+        </p>
+      </div>
+      <div class="campo">
+        <label for="conta-confirmacao">Confirme a nova senha</label>
+        <input id="conta-confirmacao" type="password" formControlName="confirmacao" autocomplete="new-password"
+          [attr.aria-invalid]="invalido('confirmacao') || formulario.hasError('confirmacaoDiferente')"
+          aria-describedby="conta-confirmacao-erro">
+        @if (formulario.controls.confirmacao.touched && formulario.hasError('confirmacaoDiferente')) {
+          <p class="erro-campo-formulario" id="conta-confirmacao-erro">As senhas não são iguais.</p>
+        }
+      </div>
+    </div>
+
+    <div class="acoes-janela">
+      <button type="submit" class="botao botao-primario" [disabled]="enviando()">
+        {{ enviando() ? 'Salvando…' : 'Trocar senha' }}
+      </button>
+    </div>
+  </form>
+</section>
+
+<p class="observacao-conta">
+  Não é possível alterar nome, e-mail ou dados da empresa por aqui, nem recuperar a senha por e-mail:
+  esses recursos ainda não existem no Frota+.
+</p>

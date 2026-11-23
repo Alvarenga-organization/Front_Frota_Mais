@@ -1,0 +1,91 @@
+<app-janela titulo="Finalizar viagem" descricao="Informe a descarga. Depois de finalizada, a viagem não recebe novos lançamentos.">
+  <form [formGroup]="formulario" (ngSubmit)="finalizar()" id="formulario-finalizacao" novalidate>
+    <div class="grade-formulario">
+      <div class="campo">
+        <label for="finalizacao-data">Data da descarga</label>
+        <input id="finalizacao-data" type="date" formControlName="dataFim" [min]="viagem.dataInicio" [max]="hoje"
+          [attr.aria-invalid]="invalido('dataFim')">
+      </div>
+      <div class="campo">
+        <label for="finalizacao-km">Km na descarga</label>
+        <input id="finalizacao-km" type="number" inputmode="numeric" formControlName="kmFinalCarregado" min="0"
+          [attr.aria-invalid]="invalido('kmFinalCarregado')">
+        @if (invalido('kmFinalCarregado')) {
+          <p class="erro-campo-formulario">Informe o km da descarga.</p>
+        }
+      </div>
+      @if (saiuVazio) {
+        <div class="campo">
+          <label for="finalizacao-consumo-vazio">Consumo médio vazio (km/L)</label>
+          <input id="finalizacao-consumo-vazio" inputmode="decimal" formControlName="consumoMedioVazio"
+            [attr.aria-invalid]="invalido('consumoMedioVazio')">
+          @if (invalido('consumoMedioVazio')) {
+            <p class="erro-campo-formulario">Informe o consumo do computador de bordo (ex.: 3,20).</p>
+          }
+        </div>
+      }
+      <div class="campo">
+        <label for="finalizacao-consumo-carregado">Consumo médio carregado (km/L)</label>
+        <input id="finalizacao-consumo-carregado" inputmode="decimal" formControlName="consumoMedioCarregado"
+          [attr.aria-invalid]="invalido('consumoMedioCarregado')">
+        @if (invalido('consumoMedioCarregado')) {
+          <p class="erro-campo-formulario">Informe o consumo do computador de bordo (ex.: 2,50).</p>
+        }
+      </div>
+    </div>
+
+    @if (coletaFaltas) {
+      <h3 class="titulo-secao">Falta completar</h3>
+      <p class="ajuda-campo">Estes dados ainda não foram informados e são necessários para finalizar.</p>
+      <div class="grade-formulario">
+        @if (faltas.valorFrete) {
+          <div class="campo">
+            <label for="finalizacao-frete">Valor do frete (R$)</label>
+            <input id="finalizacao-frete" inputmode="decimal" formControlName="valorFrete" [attr.aria-invalid]="invalido('valorFrete')">
+          </div>
+        }
+        @if (faltas.origem) {
+          <div class="campo">
+            <label for="finalizacao-origem">Origem</label>
+            <input id="finalizacao-origem" formControlName="origem" maxlength="120" [attr.aria-invalid]="invalido('origem')">
+          </div>
+        }
+        @if (faltas.destino) {
+          <div class="campo">
+            <label for="finalizacao-destino">Destino</label>
+            <input id="finalizacao-destino" formControlName="destino" maxlength="120" [attr.aria-invalid]="invalido('destino')">
+          </div>
+        }
+        @if (faltas.kmInicialCarregado) {
+          <div class="campo">
+            <label for="finalizacao-km-carregamento">Km no carregamento</label>
+            <input id="finalizacao-km-carregamento" type="number" inputmode="numeric" formControlName="kmInicialCarregado" min="0"
+              [attr.aria-invalid]="invalido('kmInicialCarregado')">
+          </div>
+        }
+      </div>
+    }
+  </form>
+
+  <div rodape>
+    @if (falha().length) {
+      <div class="aviso-formulario aviso-erro" role="alert">
+        <app-icone nome="alerta" [tamanho]="18"></app-icone>
+        <div>
+          @if (dadosGravados()) {
+            <p>Os dados que faltavam foram salvos, mas a viagem não foi finalizada:</p>
+          }
+          @for (detalhe of falha(); track $index) {
+            <p>{{ detalhe }}</p>
+          }
+        </div>
+      </div>
+    }
+    <div class="acoes-janela">
+      <button type="button" class="botao botao-secundario" mat-dialog-close>Voltar</button>
+      <button type="submit" form="formulario-finalizacao" class="botao botao-primario" [disabled]="enviando()">
+        {{ enviando() ? 'Finalizando…' : 'Finalizar viagem' }}
+      </button>
+    </div>
+  </div>
+</app-janela>

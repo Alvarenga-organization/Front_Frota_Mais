@@ -1,9 +1,11 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
-import {
-  CaminhaoResponse, MotoristaAtualizacaoRequest, MotoristaRequest, MotoristaResponse
-} from '../../../core/modelos/api.modelos';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { Observable, finalize } from 'rxjs';
+import { CaminhaoResponse, MotoristaResponse } from '../../../core/modelos/api.modelos';
+import { MotoristasService } from '../../../core/api/motoristas.service';
+import { normalizarFalha } from '../../../core/http/falha-api';
 import { AvisoService } from '../../../compartilhado/aviso.service';
 import { ConfirmacaoComponent, DadosConfirmacao } from '../../../compartilhado/confirmacao/confirmacao.component';
 import { JanelasService } from '../../../compartilhado/janela/janelas.service';
@@ -28,8 +30,11 @@ export interface DadosFormularioMotorista {
 })
 export class MotoristaFormularioComponent {
   readonly dados = inject<DadosFormularioMotorista>(MAT_DIALOG_DATA);
+  private readonly ref = inject<MatDialogRef<MotoristaFormularioComponent, boolean>>(MatDialogRef);
+  private readonly servico = inject(MotoristasService);
   private readonly aviso = inject(AvisoService);
   private readonly janelas = inject(JanelasService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly limites = LIMITES_MOTORISTA;
   readonly rotuloSituacao = ROTULO_SITUACAO_MOTORISTA;
@@ -38,9 +43,8 @@ export class MotoristaFormularioComponent {
   readonly caminhoesOferecidos = caminhoesVinculaveis(this.dados.caminhoes);
 
   readonly enviando = signal(false);
-  readonly integracaoPendente = signal(false);
-  /** Último corpo montado; será enviado pelo serviço HTTP na integração. */
-  ultimoRequest: MotoristaRequest | MotoristaAtualizacaoRequest | null = null;
+  /** `detalhes` do servidor: 400, 409 (e-mail existente, caminhão excluído), 503 (e-mail não configurado: nada gravado). */
+  readonly falha = signal<string[]>([]);
 
   private readonly fb = inject(FormBuilder).nonNullable;
   readonly formulario = this.fb.group({
@@ -63,26 +67,23 @@ export class MotoristaFormularioComponent {
   }
 
   salvar(): void {
-    this.integracaoPendente.set(false);
+    if (this.enviando()) return;
+    this.falha.set([]);
     if (this.formulario.invalid) {
       this.formulario.markAllAsTouched();
       return;
     }
     const valor = this.formulario.getRawValue();
     const motorista = this.dados.motorista;
-
     if (!motorista) {
-      this.ultimoRequest = paraMotoristaRequest(valor.nome, valor.email, valor.caminhaoIds);
-      // Integração futura: POST /api/motoristas (503 = envio de e-mail indisponível; nada é gravado).
-      this.concluirSemIntegracao('Enviar convite');
+      this.enviar(this.servico.convidar(paraMotoristaRequest(valor.nome, valor.email, valor.caminhaoIds)),
+        `Convite enviado para ${valor.email.trim()}.`);
       return;
     }
-
-    this.ultimoRequest = paraAtualizacaoRequest(motorista, valor.nome, valor.ativo);
-    const desativando = motorista.situacao === 'ATIVO' && !valor.ativo;
+    const corpo = paraAtualizacaoRequest(motorista, valor.nome, valor.ativo);
+    const desativando = motorista.situacao === 'ATIVO' && !corpo.ativo;
     if (!desativando) {
-      // Integração futura: PUT /api/motoristas/{id}.
-      this.concluirSemIntegracao('Salvar motorista');
+      this.enviar(this.servico.atualizar(motorista.id, corpo), 'Motorista salvo.');
       return;
     }
     this.janelas.abrir<ConfirmacaoComponent, DadosConfirmacao, boolean>(ConfirmacaoComponent, {
@@ -95,12 +96,18 @@ export class MotoristaFormularioComponent {
       textoConfirmar: 'Desativar',
       perigo: true
     }, 520).afterClosed().subscribe(confirmado => {
-      if (confirmado) this.concluirSemIntegracao('Desativar motorista');
+      if (confirmado) this.enviar(this.servico.atualizar(motorista.id, corpo), `${motorista.nome} desativado.`);
     });
   }
 
-  private concluirSemIntegracao(acao: string): void {
-    this.integracaoPendente.set(true);
-    this.aviso.integracaoPendente(acao);
+  private enviar(operacao: Observable<MotoristaResponse>, mensagemSucesso: string): void {
+    this.enviando.set(true);
+    operacao.pipe(finalize(() => this.enviando.set(false)), takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.aviso.mostrar(mensagemSucesso);
+        this.ref.close(true);
+      },
+      error: erro => this.falha.set(normalizarFalha(erro).detalhes)
+    });
   }
 }

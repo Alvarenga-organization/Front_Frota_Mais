@@ -25,7 +25,7 @@
       </label>
       @if (ehDono()) {
         <label class="opcao-marcavel">
-          <input type="checkbox" [checked]="incluirExcluidos()" (change)="incluirExcluidos.set($any($event.target).checked)">
+          <input type="checkbox" [checked]="incluirExcluidos()" (change)="alternarExcluidos($any($event.target).checked)">
           Mostrar excluídos
         </label>
       }
@@ -103,12 +103,12 @@
         [attr.aria-label]="'Editar caminhão ' + caminhao.placa" title="Editar">
         <app-icone nome="editar"></app-icone>
       </button>
-      <button type="button" class="acao-icone acao-status" (click)="alternarStatus(caminhao)"
+      <button type="button" class="acao-icone acao-status" (click)="alternarStatus(caminhao)" [disabled]="processando()"
         [attr.aria-label]="(caminhao.status === 'ATIVO' ? 'Inativar caminhão ' : 'Reativar caminhão ') + caminhao.placa"
         [title]="caminhao.status === 'ATIVO' ? 'Inativar' : 'Reativar'">
         <app-icone [nome]="caminhao.status === 'ATIVO' ? 'inativar' : 'reativar'"></app-icone>
       </button>
-      <button type="button" class="acao-icone perigo acao-excluir" (click)="excluir(caminhao)"
+      <button type="button" class="acao-icone perigo acao-excluir" (click)="excluir(caminhao)" [disabled]="processando()"
         [attr.aria-label]="'Excluir caminhão ' + caminhao.placa" title="Excluir">
         <app-icone nome="excluir"></app-icone>
       </button>

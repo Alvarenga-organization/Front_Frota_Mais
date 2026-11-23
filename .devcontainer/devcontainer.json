@@ -1,0 +1,24 @@
+{
+  // Ambiente reproduzível do front-end Frota+ (Codespaces / Dev Containers).
+  // Reconstruir: "Codespaces: Rebuild Container" (ou "Dev Containers: Rebuild Container").
+  // Não é obrigatório para desenvolver: veja a seção "Ambiente" do README.
+  "name": "Frota+ front-end",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24.22.3"
+    }
+  },
+  // 1) Bibliotecas de sistema do Chromium headless (testes Karma).
+  // 2) Dependências do projeto pelo package-lock (o Puppeteer baixa o Chromium para ~/.cache/puppeteer).
+  "postCreateCommand": "bash .devcontainer/instalar-bibliotecas-chromium.sh && npm ci",
+  "forwardPorts": [4200],
+  "portsAttributes": {
+    "4200": { "label": "ng serve (front-end)" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["Angular.ng-template"]
+    }
+  }
+}

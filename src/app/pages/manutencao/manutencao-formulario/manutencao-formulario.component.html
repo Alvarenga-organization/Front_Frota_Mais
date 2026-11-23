@@ -1,0 +1,58 @@
+<app-janela [titulo]="titulo" descricao="A manutenção é custo do caminhão e entra no resultado do período pela data; não pertence a nenhum frete.">
+  <form [formGroup]="formulario" (ngSubmit)="salvar()" id="formulario-manutencao" novalidate>
+    <div class="grade-formulario">
+      <div class="campo">
+        <label for="manutencao-caminhao">Caminhão</label>
+        <select id="manutencao-caminhao" formControlName="caminhaoId" [attr.aria-invalid]="invalido('caminhaoId')">
+          <option value="" disabled>Selecione</option>
+          @for (caminhao of caminhoes; track caminhao.id) {
+            <option [value]="caminhao.id">{{ caminhao.placa }} · {{ caminhao.modelo }}</option>
+          }
+        </select>
+        @if (invalido('caminhaoId')) {
+          <p class="erro-campo-formulario">Selecione o caminhão.</p>
+        }
+      </div>
+      <div class="campo">
+        <label for="manutencao-data">Data</label>
+        <input id="manutencao-data" type="date" formControlName="data" [max]="hoje" [attr.aria-invalid]="invalido('data')">
+      </div>
+      <div class="campo campo-inteiro">
+        <label for="manutencao-descricao">Descrição</label>
+        <textarea id="manutencao-descricao" formControlName="descricao" rows="3" [maxlength]="limiteDescricao"
+          placeholder="Ex: Troca de pneus" [attr.aria-invalid]="invalido('descricao')"></textarea>
+        @if (invalido('descricao')) {
+          <p class="erro-campo-formulario">Descreva a manutenção (até {{ limiteDescricao }} caracteres).</p>
+        }
+      </div>
+      <div class="campo">
+        <label for="manutencao-valor">Valor (R$)</label>
+        <input id="manutencao-valor" inputmode="decimal" formControlName="valor" placeholder="Ex: 1.500,00"
+          [attr.aria-invalid]="invalido('valor')">
+        @if (invalido('valor')) {
+          <p class="erro-campo-formulario">Informe o valor (maior que zero, até 2 casas).</p>
+        }
+      </div>
+    </div>
+  </form>
+
+  <div rodape>
+    @if (falha().length) {
+      <div class="aviso-formulario aviso-erro" role="alert">
+        <app-icone nome="alerta" [tamanho]="18"></app-icone>
+        <div>
+          @for (detalhe of falha(); track $index) {
+            <p>{{ detalhe }}</p>
+          }
+        </div>
+      </div>
+    }
+    <div class="acoes-janela">
+      <button type="button" class="botao botao-secundario" mat-dialog-close>Cancelar</button>
+      <button type="submit" form="formulario-manutencao" class="botao botao-primario" [disabled]="enviando()">
+        <app-icone nome="salvar" [tamanho]="18"></app-icone>
+        {{ enviando() ? 'Salvando…' : 'Salvar manutenção' }}
+      </button>
+    </div>
+  </div>
+</app-janela>

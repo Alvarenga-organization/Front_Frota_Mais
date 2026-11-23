@@ -1,4 +1,109 @@
-<header class="cabecalho-pagina">
-  <h1>Manutenções</h1>
-  <p>Gerencie suas manutenções</p>
+<header class="cabecalho-pagina com-acoes">
+  <div>
+    <h1>Manutenções</h1>
+    <p>Gerencie suas manutenções</p>
+  </div>
+  <button type="button" class="botao-cabecalho" (click)="nova()">
+    + {{ telaPequena() ? 'Nova' : 'Nova Manutenção' }}
+  </button>
 </header>
+
+<section class="cartao-lista" aria-labelledby="titulo-manutencoes">
+  <div class="cartao-lista-topo">
+    <div>
+      <h2 id="titulo-manutencoes">Registros</h2>
+      <p class="contagem">{{ manutencoes().length }} manutenção(ões)</p>
+    </div>
+    <div class="filtros-lista">
+      <label class="busca">
+        <span class="cdk-visually-hidden">Filtrar por caminhão</span>
+        <select [value]="filtroCaminhao() ?? ''" (change)="filtrar('caminhao', $any($event.target).value)" aria-label="Filtrar por caminhão">
+          <option value="">Todos os caminhões</option>
+          @for (caminhao of caminhoes(); track caminhao.id) {
+            <option [value]="caminhao.id">{{ caminhao.placa }}{{ caminhao.status === 'EXCLUIDO' ? ' (excluído)' : '' }}</option>
+          }
+        </select>
+      </label>
+      <label class="busca">
+        <span>De</span>
+        <input type="date" [value]="filtroDe()" (change)="filtrar('de', $any($event.target).value)" aria-label="Data inicial">
+      </label>
+      <label class="busca">
+        <span>Até</span>
+        <input type="date" [value]="filtroAte()" (change)="filtrar('ate', $any($event.target).value)" aria-label="Data final">
+      </label>
+      <label class="opcao-marcavel">
+        <input type="checkbox" [checked]="incluirExcluidas()" (change)="filtrar('excluidas', $any($event.target).checked)">
+        Mostrar excluídas
+      </label>
+    </div>
+  </div>
+
+  <app-estado-lista [estado]="estado()" [detalhes]="detalhesFalha()" (tentarDeNovo)="carregar()"
+    mensagemVazio="Nenhuma manutenção encontrada. Use “+ Nova Manutenção” para registrar.">
+    @if (telaPequena()) {
+      <ul class="lista-cartoes" aria-label="Manutenções">
+        @for (manutencao of manutencoes(); track manutencao.id) {
+          <li class="cartao-item" [attr.data-manutencao-id]="manutencao.id">
+            <div class="cartao-item-topo">
+              <div>
+                <p class="cartao-item-titulo">{{ manutencao.placa }} {{ modelo(manutencao) }}</p>
+                <p class="cartao-item-linha">{{ manutencao.descricao }}</p>
+                <p class="cartao-item-linha">{{ manutencao.data | data }} · {{ manutencao.valor | moeda }}</p>
+              </div>
+              @if (manutencao.excluidaEm) { <span class="selo selo-perigo">Excluída</span> }
+            </div>
+            <div class="cartao-item-acoes">
+              <ng-container *ngTemplateOutlet="acoes; context: { $implicit: manutencao }"></ng-container>
+            </div>
+          </li>
+        }
+      </ul>
+    } @else {
+      <div class="tabela-rolagem">
+        <table class="tabela">
+          <thead>
+            <tr>
+              <th scope="col">Veículo</th>
+              <th scope="col">Descrição</th>
+              <th scope="col">Data</th>
+              <th scope="col">Valor</th>
+              <th scope="col" class="coluna-acoes">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (manutencao of manutencoes(); track manutencao.id) {
+              <tr [attr.data-manutencao-id]="manutencao.id" [class.linha-esmaecida]="manutencao.excluidaEm">
+                <td class="destaque">{{ manutencao.placa }} <span class="secundario">{{ modelo(manutencao) }}</span></td>
+                <td>{{ manutencao.descricao }}
+                  @if (manutencao.excluidaEm) { <span class="selo selo-perigo">Excluída</span> }
+                </td>
+                <td>{{ manutencao.data | data }}</td>
+                <td>{{ manutencao.valor | moeda }}</td>
+                <td class="coluna-acoes">
+                  <ng-container *ngTemplateOutlet="acoes; context: { $implicit: manutencao }"></ng-container>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </app-estado-lista>
+</section>
+
+<ng-template #acoes let-manutencao>
+  <span class="acoes-linha">
+    @if (editavel(manutencao)) {
+      <button type="button" class="acao-icone acao-editar" (click)="editar(manutencao)" aria-label="Editar manutenção" title="Editar">
+        <app-icone nome="editar"></app-icone>
+      </button>
+      <button type="button" class="acao-icone perigo acao-excluir" (click)="excluir(manutencao)" [disabled]="processando()"
+        aria-label="Excluir manutenção" title="Excluir">
+        <app-icone nome="excluir"></app-icone>
+      </button>
+    } @else {
+      <span class="secundario">Só consulta</span>
+    }
+  </span>
+</ng-template>

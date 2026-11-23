@@ -1,6 +1,19 @@
 <h1>Bem-vindo(a)!</h1>
 <p class="descricao">Faça login para acessar o sistema de controle da sua frota</p>
 
+@if (sessaoEncerrada) {
+  <div class="alerta-servidor informativo" role="status">
+    <p>Sua sessão foi encerrada. Entre novamente para continuar.</p>
+  </div>
+}
+@if (falha().length) {
+  <div class="alerta-servidor" role="alert">
+    @for (detalhe of falha(); track $index) {
+      <p>{{ detalhe }}</p>
+    }
+  </div>
+}
+
 <form [formGroup]="formulario" (ngSubmit)="entrar()" novalidate>
   <div class="campos">
     <div>
@@ -27,7 +40,7 @@
   </div>
 
   <div class="botoes">
-    <button type="submit" class="botao-primario">Entrar</button>
+    <button type="submit" class="botao-primario" [disabled]="enviando()">{{ enviando() ? 'Entrando…' : 'Entrar' }}</button>
     <a routerLink="/criar-conta" class="botao-secundario">Criar conta</a>
   </div>
 </form>
@@ -39,13 +52,3 @@
     A recuperação de senha ainda não está disponível no Frota+.
   </p>
 }
-
-<section class="demonstracao" aria-labelledby="titulo-demonstracao">
-  <strong id="titulo-demonstracao">Modo demonstração</strong>
-  <p>Enquanto a integração com o servidor não existe, abra as telas com dados fictícios.
-    Nada é gravado.</p>
-  <div class="demonstracao-acoes">
-    <button type="button" (click)="entrarDemonstracao('DONO')">Ver como dono</button>
-    <button type="button" (click)="entrarDemonstracao('MOTORISTA')">Ver como motorista</button>
-  </div>
-</section>

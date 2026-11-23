@@ -1,5 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { SessaoService } from '../core/sessao/sessao.service';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { LayoutModule } from './layout.module';
 import { LayoutComponent } from './layout.component';
@@ -10,7 +13,7 @@ describe('LayoutComponent (menu por perfil)', () => {
     limparSessao();
     await TestBed.configureTestingModule({
       imports: [LayoutModule],
-      providers: [provideRouter([]), provideNoopAnimations()]
+      providers: [provideRouter([]), provideNoopAnimations(), provideHttpClient(), provideHttpClientTesting()]
     }).compileComponents();
   });
 
@@ -30,5 +33,19 @@ describe('LayoutComponent (menu por perfil)', () => {
   it('MOTORISTA vê só Caminhões e Viagens', () => {
     entrarComo('MOTORISTA');
     expect(rotulosDoMenu()).toEqual(['Caminhões', 'Viagens']);
+  });
+
+  it('Sair: limpa a sessão no cliente (sem chamar o servidor) e vai ao login', () => {
+    const sessao = entrarComo('DONO');
+    const router = TestBed.inject(Router);
+    spyOn(router, 'navigateByUrl').and.resolveTo(true);
+    const fixture = TestBed.createComponent(LayoutComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.sair();
+    expect(sessao.sessao()).toBeNull();
+    expect(sessionStorage.length).toBe(0);
+    expect(TestBed.inject(SessaoService).token()).toBeNull();
+    TestBed.inject(HttpTestingController).expectNone(() => true);
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
   });
 });

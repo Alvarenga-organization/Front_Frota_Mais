@@ -1,3 +1,6 @@
+> **Aviso:** este arquivo descreve o modelo didático original e está desatualizado (o projeto agora tem autenticação
+> e integração com a API). A documentação atual está no [`README.md`](README.md).
+
 
 # Modelo de Projeto Integrador
 

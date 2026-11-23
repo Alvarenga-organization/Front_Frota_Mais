@@ -103,12 +103,12 @@
       <app-icone nome="caminhao"></app-icone>
     </button>
     @if (motorista.situacao === 'CONVITE_PENDENTE') {
-      <button type="button" class="acao-icone acao-reenviar" (click)="reenviarConvite(motorista)"
+      <button type="button" class="acao-icone acao-reenviar" (click)="reenviarConvite(motorista)" [disabled]="processando()"
         [attr.aria-label]="'Reenviar convite para ' + motorista.nome" title="Reenviar convite">
         <app-icone nome="enviar"></app-icone>
       </button>
       @if (podeCancelarConvite(motorista)) {
-        <button type="button" class="acao-icone perigo acao-cancelar-convite" (click)="cancelarConvite(motorista)"
+        <button type="button" class="acao-icone perigo acao-cancelar-convite" (click)="cancelarConvite(motorista)" [disabled]="processando()"
           [attr.aria-label]="'Cancelar convite de ' + motorista.nome" title="Cancelar convite">
           <app-icone nome="fechar"></app-icone>
         </button>

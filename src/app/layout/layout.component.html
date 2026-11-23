@@ -1,6 +1,3 @@
-<!--
-  "Conta" ainda não tem ação: a página de conta (troca de senha) entra num próximo grupo de telas.
--->
 <mat-sidenav-container class="estrutura">
   <mat-sidenav class="menu-lateral" mode="side"
     [opened]="!(telaPequena$ | async)" aria-label="Menu principal">
@@ -25,21 +22,20 @@
         <img src="imagens/icon-logout.svg" alt="" width="16" height="16">
         <span>Sair</span>
       </button>
-      <button type="button" class="acao-conta" aria-disabled="true"
-        title="A página da conta entra no próximo grupo de telas">
+      <a routerLink="/conta" routerLinkActive="conta-ativa" ariaCurrentWhenActive="page" class="acao-conta"
+        [title]="nome()">
         <img src="imagens/icon-usuario.svg" alt="" width="16" height="16">
         <span>Conta</span>
-      </button>
+      </a>
     </div>
   </mat-sidenav>
 
   <mat-sidenav-content class="area-principal">
     @if (telaPequena$ | async) {
       <header class="topo-celular">
-        <button type="button" class="acao-conta" aria-disabled="true" aria-label="Conta"
-          title="A página da conta entra no próximo grupo de telas">
+        <a routerLink="/conta" class="acao-conta" aria-label="Conta" [title]="nome()">
           <img src="imagens/icon-usuario.svg" alt="" width="22" height="22">
-        </button>
+        </a>
         <img src="imagens/logo.png" alt="Frota+" class="logo-celular">
         <button type="button" class="acao-conta" aria-label="Sair" (click)="sair()">
           <img src="imagens/icon-logout.svg" alt="" width="22" height="22">
@@ -48,11 +44,6 @@
     }
 
     <main id="conteudo" class="conteudo" tabindex="-1">
-      @if (demonstracao()) {
-        <p class="faixa-demonstracao" role="note">
-          Modo demonstração: as telas usam dados fictícios e nada é gravado no servidor.
-        </p>
-      }
       <router-outlet></router-outlet>
     </main>
 

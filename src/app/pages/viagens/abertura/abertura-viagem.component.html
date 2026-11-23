@@ -1,0 +1,139 @@
+<app-janela titulo="Nova viagem" descricao="Uma viagem é um frete: da saída para buscar a carga até a descarga.">
+  <form [formGroup]="formulario" (ngSubmit)="abrir()" id="formulario-abertura" novalidate>
+    @if (!caminhoes.length) {
+      <p class="aviso-formulario" role="note">
+        <app-icone nome="alerta" [tamanho]="18"></app-icone>
+        Nenhum caminhão ativo disponível. Só caminhões ativos abrem viagens.
+      </p>
+    }
+
+    <div class="grade-formulario">
+      <div class="campo">
+        <label for="abertura-caminhao">Caminhão</label>
+        <select id="abertura-caminhao" formControlName="caminhaoId" [attr.aria-invalid]="invalido('caminhaoId')">
+          <option value="" disabled>Selecione</option>
+          @for (caminhao of caminhoes; track caminhao.id) {
+            <option [value]="caminhao.id">{{ caminhao.placa }} · {{ caminhao.modelo }}</option>
+          }
+        </select>
+        @if (invalido('caminhaoId')) {
+          <p class="erro-campo-formulario">Selecione o caminhão.</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="abertura-data">Data de partida</label>
+        <input id="abertura-data" type="date" formControlName="dataInicio" [max]="hoje" [attr.aria-invalid]="invalido('dataInicio')">
+        @if (invalido('dataInicio')) {
+          <p class="erro-campo-formulario">Informe a data de partida.</p>
+        }
+      </div>
+
+      @if (ehDono()) {
+        <div class="campo campo-inteiro">
+          <label for="abertura-responsavel">Motorista responsável <span class="opcional">— opcional</span></label>
+          <select id="abertura-responsavel" formControlName="responsavel">
+            @for (opcao of opcoesResponsavel(); track opcao.id) {
+              <option [value]="valorResponsavel(opcao.id)">{{ opcao.rotulo }}</option>
+            }
+          </select>
+          <p class="ajuda-campo">
+            Aparecem os motoristas ativos vinculados ao caminhão escolhido.
+            @if (falhaMotoristas()) { Não foi possível carregar os motoristas agora. }
+          </p>
+        </div>
+      }
+
+      <fieldset class="campo campo-inteiro grupo-saida" [attr.aria-invalid]="invalido('saida')">
+        <legend class="rotulo-campo">Sai vazio ou carregado?</legend>
+        <div class="opcoes-saida">
+          <label class="opcao-marcavel"><input type="radio" formControlName="saida" value="VAZIO"> Vazio (vai buscar a carga)</label>
+          <label class="opcao-marcavel"><input type="radio" formControlName="saida" value="CARREGADO"> Já carregado</label>
+        </div>
+        @if (invalido('saida')) {
+          <p class="erro-campo-formulario">Escolha uma opção.</p>
+        }
+      </fieldset>
+
+      <div class="campo">
+        <label for="abertura-km">{{ saida() === 'VAZIO' ? 'Km na saída vazia' : saida() === 'CARREGADO' ? 'Km no carregamento' : 'Km inicial (odômetro)' }}</label>
+        <input id="abertura-km" type="number" inputmode="numeric" formControlName="km" min="0" [attr.aria-invalid]="invalido('km')">
+        @if (invalido('km')) {
+          <p class="erro-campo-formulario">Informe o km (número inteiro de 0 a 9.999.999).</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="abertura-frete">Valor do frete (R$) <span class="opcional">— opcional agora</span></label>
+        <input id="abertura-frete" inputmode="decimal" formControlName="valorFrete" placeholder="Ex: 3.500,00"
+          [attr.aria-invalid]="invalido('valorFrete')">
+        @if (invalido('valorFrete')) {
+          <p class="erro-campo-formulario">Valor inválido (maior que zero, até 2 casas).</p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="abertura-origem">Origem <span class="opcional">— opcional agora</span></label>
+        <input id="abertura-origem" formControlName="origem" maxlength="120" placeholder="Cidade de origem">
+      </div>
+      <div class="campo">
+        <label for="abertura-destino">Destino <span class="opcional">— opcional agora</span></label>
+        <input id="abertura-destino" formControlName="destino" maxlength="120" placeholder="Cidade de destino">
+      </div>
+    </div>
+
+    <button type="button" class="alternar-secao" (click)="maisInformacoes.set(!maisInformacoes())"
+      [attr.aria-expanded]="maisInformacoes()" aria-controls="abertura-mais">
+      {{ maisInformacoes() ? '− Menos informações' : '+ Consumos e abastecimentos anteriores' }}
+    </button>
+
+    @if (maisInformacoes()) {
+      <div id="abertura-mais" class="secao-extra">
+        <div class="grade-formulario">
+          @if (saida() === 'VAZIO') {
+            <div class="campo">
+              <label for="abertura-consumo-vazio">Consumo médio vazio (km/L) <span class="opcional">— opcional</span></label>
+              <input id="abertura-consumo-vazio" inputmode="decimal" formControlName="consumoMedioVazio" placeholder="Ex: 3,20"
+                [attr.aria-invalid]="invalido('consumoMedioVazio')">
+            </div>
+          }
+          <div class="campo">
+            <label for="abertura-consumo-carregado">Consumo médio carregado (km/L) <span class="opcional">— opcional</span></label>
+            <input id="abertura-consumo-carregado" inputmode="decimal" formControlName="consumoMedioCarregado" placeholder="Ex: 2,50"
+              [attr.aria-invalid]="invalido('consumoMedioCarregado')">
+          </div>
+        </div>
+
+        <h3 class="titulo-secao">Abastecimentos anteriores</h3>
+        <p class="ajuda-campo">Abastecimento feito antes de abrir a viagem pertence a este frete. Informe a data real
+          (pode ser anterior à partida). O servidor confere o período permitido.</p>
+        @for (grupo of abastecimentos.controls; track grupo; let i = $index) {
+          <div class="item-abastecimento">
+            <app-campos-abastecimento [grupo]="grupo" [hoje]="hoje"></app-campos-abastecimento>
+            <button type="button" class="botao botao-secundario" (click)="removerAbastecimento(i)">Remover abastecimento</button>
+          </div>
+        }
+        <button type="button" class="botao botao-secundario" (click)="adicionarAbastecimento()">+ Abastecimento anterior</button>
+      </div>
+    }
+  </form>
+
+  <div rodape>
+    @if (falha().length) {
+      <div class="aviso-formulario aviso-erro" role="alert">
+        <app-icone nome="alerta" [tamanho]="18"></app-icone>
+        <div>
+          @for (detalhe of falha(); track $index) {
+            <p>{{ detalhe }}</p>
+          }
+        </div>
+      </div>
+    }
+    <div class="acoes-janela">
+      <button type="button" class="botao botao-secundario" mat-dialog-close>Cancelar</button>
+      <button type="submit" form="formulario-abertura" class="botao botao-primario" [disabled]="enviando() || !caminhoes.length">
+        {{ enviando() ? 'Abrindo…' : 'Abrir viagem' }}
+      </button>
+    </div>
+  </div>
+</app-janela>

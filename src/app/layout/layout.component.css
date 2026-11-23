@@ -84,11 +84,11 @@ a.item-ativo {
     font-weight: 700;
 }
 
-.rodape-menu-lateral .acao-conta:hover:not([aria-disabled="true"]) {
+.rodape-menu-lateral .acao-conta:hover {
     background: #EDF2FA;
 }
 
-/* "Sair"/"Conta": aparência de link, sem ação até existir a sessão. */
+/* "Sair"/"Conta": aparência de link. */
 .acao-conta {
     display: flex;
     align-items: center;
@@ -98,22 +98,11 @@ a.item-ativo {
     color: #0A56D0;
     cursor: pointer;
     text-align: left;
+    text-decoration: none;
 }
 
-.acao-conta[aria-disabled="true"] {
-    cursor: default;
-}
-
-/* Aviso do modo demonstração (fora do Figma; some com a integração). */
-.faixa-demonstracao {
-    margin: -24px 0 24px;
-    padding: 8px 14px;
-    border: 1px dashed #b8c4d4;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.7);
-    color: #586a7f;
-    font-size: 13px;
-    line-height: 1.5;
+.acao-conta.conta-ativa {
+    background: #EDF2FA;
 }
 
 .acao-conta:focus-visible,
@@ -211,9 +200,5 @@ a.item-ativo {
 
     .conteudo {
         padding: 16px;
-    }
-
-    .faixa-demonstracao {
-        margin: 0 0 16px;
     }
 }

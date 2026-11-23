@@ -86,10 +86,15 @@
   </form>
 
   <div rodape>
-    @if (integracaoPendente()) {
-      <p class="aviso-formulario" role="status">
-        A comunicação com o servidor ainda não foi integrada. Nada foi gravado.
-      </p>
+    @if (falha().length) {
+      <div class="aviso-formulario aviso-erro" role="alert">
+        <app-icone nome="alerta" [tamanho]="18"></app-icone>
+        <div>
+          @for (detalhe of falha(); track $index) {
+            <p>{{ detalhe }}</p>
+          }
+        </div>
+      </div>
     }
     <div class="acoes-janela">
       <button type="button" class="botao botao-secundario" mat-dialog-close>{{ somenteLeitura ? 'Fechar' : 'Cancelar' }}</button>

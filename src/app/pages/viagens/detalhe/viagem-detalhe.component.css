@@ -1,0 +1,159 @@
+.voltar {
+    display: inline-block;
+    margin-bottom: 12px;
+    color: #0A56D0;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.estado-pagina {
+    padding: 40px 0;
+    color: #64748b;
+}
+
+.estado-falha {
+    color: #b3261e;
+}
+
+.cabecalho-viagem h1 {
+    max-width: none;
+}
+
+.cabecalho-viagem p {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.barra-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.perigo-texto {
+    color: #c0392b !important;
+}
+
+.grade-detalhe {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.cartao-detalhe {
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.grade-detalhe .cartao-detalhe {
+    margin-bottom: 0;
+}
+
+.cartao-detalhe h2 {
+    margin: 0 0 12px;
+    font-size: 18px;
+}
+
+.cartao-detalhe h3 {
+    margin: 20px 0 8px;
+    font-size: 15px;
+    color: #444746;
+}
+
+.topo-secao {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.acoes-lancamento {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.lista-dados {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.lista-dados > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 14px;
+}
+
+.lista-dados dt {
+    color: #64748b;
+}
+
+.lista-dados dd {
+    margin: 0;
+    font-weight: 600;
+    text-align: right;
+}
+
+.lista-dados .total dd {
+    color: #0A56D0;
+}
+
+.pendencias {
+    margin: 4px 0 0;
+    padding-left: 18px;
+}
+
+.lista-lancamentos {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.lista-lancamentos li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 14px;
+}
+
+.lista-lancamentos .descricao {
+    flex: 1;
+    min-width: 120px;
+    overflow-wrap: anywhere;
+}
+
+.lista-lancamentos .acoes-linha {
+    margin-left: auto;
+}
+
+.vazio {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+}
+
+@media (max-width: 767px) {
+    .cartao-detalhe {
+        padding: 16px;
+    }
+
+    .barra-acoes .botao {
+        flex: 1 1 100%;
+    }
+}

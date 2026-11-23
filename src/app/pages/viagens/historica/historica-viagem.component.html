@@ -1,0 +1,125 @@
+<app-janela titulo="Viagem histórica"
+  descricao="Registre um frete que já aconteceu. Ele é gravado como concluído, com todos os dados de uma finalização. Se algum item for recusado, nada é gravado.">
+  <form [formGroup]="formulario" (ngSubmit)="salvar()" id="formulario-historica" novalidate>
+    <div class="grade-formulario">
+      <div class="campo">
+        <label for="historica-caminhao">Caminhão</label>
+        <select id="historica-caminhao" formControlName="caminhaoId" [attr.aria-invalid]="invalido('caminhaoId')">
+          <option value="" disabled>Selecione</option>
+          @for (caminhao of caminhoes; track caminhao.id) {
+            <option [value]="caminhao.id">{{ caminhao.placa }} · {{ caminhao.modelo }}</option>
+          }
+        </select>
+      </div>
+      <div class="campo">
+        <label for="historica-responsavel">Motorista responsável <span class="opcional">— opcional</span></label>
+        <select id="historica-responsavel" formControlName="responsavel">
+          @for (opcao of opcoesResponsavel; track opcao.id) {
+            <option [value]="valorResponsavel(opcao.id)">{{ opcao.rotulo }}</option>
+          }
+        </select>
+      </div>
+      <div class="campo">
+        <label for="historica-inicio">Data de partida</label>
+        <input id="historica-inicio" type="date" formControlName="dataInicio" [max]="hoje" [attr.aria-invalid]="invalido('dataInicio')">
+      </div>
+      <div class="campo">
+        <label for="historica-fim">Data da descarga</label>
+        <input id="historica-fim" type="date" formControlName="dataFim" [max]="hoje" [attr.aria-invalid]="invalido('dataFim')">
+      </div>
+      <div class="campo">
+        <label for="historica-origem">Origem</label>
+        <input id="historica-origem" formControlName="origem" maxlength="120" [attr.aria-invalid]="invalido('origem')">
+      </div>
+      <div class="campo">
+        <label for="historica-destino">Destino</label>
+        <input id="historica-destino" formControlName="destino" maxlength="120" [attr.aria-invalid]="invalido('destino')">
+      </div>
+      <div class="campo">
+        <label for="historica-frete">Valor do frete (R$)</label>
+        <input id="historica-frete" inputmode="decimal" formControlName="valorFrete" [attr.aria-invalid]="invalido('valorFrete')">
+      </div>
+      <div class="campo">
+        <label for="historica-km-vazio">Km na saída vazia <span class="opcional">— se saiu vazio</span></label>
+        <input id="historica-km-vazio" type="number" inputmode="numeric" formControlName="kmInicialVazio" min="0" [attr.aria-invalid]="invalido('kmInicialVazio')">
+      </div>
+      <div class="campo">
+        <label for="historica-km-carregado">Km no carregamento</label>
+        <input id="historica-km-carregado" type="number" inputmode="numeric" formControlName="kmInicialCarregado" min="0" [attr.aria-invalid]="invalido('kmInicialCarregado')">
+      </div>
+      <div class="campo">
+        <label for="historica-km-final">Km na descarga</label>
+        <input id="historica-km-final" type="number" inputmode="numeric" formControlName="kmFinalCarregado" min="0" [attr.aria-invalid]="invalido('kmFinalCarregado')">
+      </div>
+      <div class="campo">
+        <label for="historica-consumo-vazio">Consumo médio vazio (km/L) <span class="opcional">— se saiu vazio</span></label>
+        <input id="historica-consumo-vazio" inputmode="decimal" formControlName="consumoMedioVazio"
+          [attr.aria-invalid]="invalido('consumoMedioVazio') || formulario.hasError('consumoVazioObrigatorio')">
+        @if (formulario.hasError('consumoVazioObrigatorio') && formulario.controls.consumoMedioVazio.touched) {
+          <p class="erro-campo-formulario">Informe o consumo do deslocamento vazio.</p>
+        }
+      </div>
+      <div class="campo">
+        <label for="historica-consumo-carregado">Consumo médio carregado (km/L)</label>
+        <input id="historica-consumo-carregado" inputmode="decimal" formControlName="consumoMedioCarregado" [attr.aria-invalid]="invalido('consumoMedioCarregado')">
+      </div>
+    </div>
+
+    <h3 class="titulo-secao">Abastecimentos <span class="opcional">— opcional</span></h3>
+    @for (grupo of abastecimentos.controls; track grupo; let i = $index) {
+      <div class="item-abastecimento">
+        <app-campos-abastecimento [grupo]="grupo" [hoje]="hoje"></app-campos-abastecimento>
+        <button type="button" class="botao botao-secundario" (click)="abastecimentos.removeAt(i)">Remover</button>
+      </div>
+    }
+    <button type="button" class="botao botao-secundario" (click)="adicionar('abastecimento')">+ Abastecimento</button>
+
+    <h3 class="titulo-secao">Pedágios <span class="opcional">— opcional</span></h3>
+    @for (grupo of pedagios.controls; track grupo; let i = $index) {
+      <div class="item-abastecimento grade-formulario" [formGroup]="grupo">
+        <div class="campo"><label [for]="'historica-pedagio-data-' + i">Data</label>
+          <input [id]="'historica-pedagio-data-' + i" type="date" formControlName="data" [max]="hoje"></div>
+        <div class="campo"><label [for]="'historica-pedagio-valor-' + i">Valor pago (R$)</label>
+          <input [id]="'historica-pedagio-valor-' + i" inputmode="decimal" formControlName="valor"
+            [attr.aria-invalid]="grupo.controls.valor.invalid && grupo.controls.valor.touched"></div>
+        <button type="button" class="botao botao-secundario" (click)="pedagios.removeAt(i)">Remover</button>
+      </div>
+    }
+    <button type="button" class="botao botao-secundario" (click)="adicionar('pedagio')">+ Pedágio</button>
+
+    <h3 class="titulo-secao">Despesas extras <span class="opcional">— opcional</span></h3>
+    @for (grupo of despesas.controls; track grupo; let i = $index) {
+      <div class="item-abastecimento grade-formulario" [formGroup]="grupo">
+        <div class="campo campo-inteiro"><label [for]="'historica-despesa-descricao-' + i">Descrição</label>
+          <input [id]="'historica-despesa-descricao-' + i" formControlName="descricao" maxlength="200"
+            [attr.aria-invalid]="grupo.controls.descricao.invalid && grupo.controls.descricao.touched"></div>
+        <div class="campo"><label [for]="'historica-despesa-data-' + i">Data</label>
+          <input [id]="'historica-despesa-data-' + i" type="date" formControlName="data" [max]="hoje"></div>
+        <div class="campo"><label [for]="'historica-despesa-valor-' + i">Valor (R$)</label>
+          <input [id]="'historica-despesa-valor-' + i" inputmode="decimal" formControlName="valor"
+            [attr.aria-invalid]="grupo.controls.valor.invalid && grupo.controls.valor.touched"></div>
+        <button type="button" class="botao botao-secundario" (click)="despesas.removeAt(i)">Remover</button>
+      </div>
+    }
+    <button type="button" class="botao botao-secundario" (click)="adicionar('despesa')">+ Despesa extra</button>
+  </form>
+
+  <div rodape>
+    @if (falha().length) {
+      <div class="aviso-formulario aviso-erro" role="alert">
+        <app-icone nome="alerta" [tamanho]="18"></app-icone>
+        <div>
+          @for (detalhe of falha(); track $index) {
+            <p>{{ detalhe }}</p>
+          }
+        </div>
+      </div>
+    }
+    <div class="acoes-janela">
+      <button type="button" class="botao botao-secundario" mat-dialog-close>Cancelar</button>
+      <button type="submit" form="formulario-historica" class="botao botao-primario" [disabled]="enviando()">
+        {{ enviando() ? 'Salvando…' : 'Registrar viagem' }}
+      </button>
+    </div>
+  </div>
+</app-janela>
