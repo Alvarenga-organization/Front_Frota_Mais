@@ -7,7 +7,9 @@ export default {
   '/api': {
     target: alvo,
     secure: true,
-    changeOrigin: false,
+    // Necessário para alvos remotos (ex.: porta encaminhada do Codespaces), que
+    // roteiam pelo cabeçalho Host; inofensivo para localhost.
+    changeOrigin: true,
     logLevel: 'warn'
   }
 };
