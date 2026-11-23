@@ -1,9 +1,11 @@
 # Status da integração do front-end
 
-- **Atualizado em:** 19/11/2026
-- **Branch:** `feat/integracao-http` (a partir de `origin/main` `4971bfc`), commits **locais**, sem push.
-- **Back-end:** não disponível neste ambiente durante o trabalho. Toda a comunicação foi validada com testes
-  automatizados (`HttpTestingController`); **nenhuma chamada foi feita contra a API real**.
+- **Atualizado em:** 23/11/2026
+- **Branch:** `feat/integracao-http` (a partir de `origin/main` `4971bfc`). Os commits de 19/11 foram recuperados do
+  Codespaces expirado pela exportação de alterações para a branch remota `codespace-ideal-space-guide-77vvwwxwjp5p2rv99`.
+- **Back-end:** em 19/11 não estava disponível; a comunicação foi validada só com testes automatizados
+  (`HttpTestingController`). Em **23/11** o contrato HTTP foi validado contra a API real do time de back-end,
+  pelo proxy do `ng serve` (seção 4A). O fluxo completo pela interface (E2E no navegador) **ainda não foi feito**.
 
 Legenda de contrato: **Confirmado** = comportamento descrito no contrato da API consultado; **Inferido** = evidência
 parcial, precisa ser conferido na API real.
@@ -13,7 +15,8 @@ parcial, precisa ser conferido na API real.
 | Classificação | Itens |
 |---|---|
 | **Implementado e validado por testes automatizados** | Infraestrutura HTTP, interceptor, sessão/JWT, guards, erros; login, registro, ativação de convite, troca de senha, logout; caminhões; motoristas e convites; viagens (lista, abertura, detalhe, alteração, finalização, cancelamento, correção, histórica, auditoria); lançamentos; manutenções; dashboard; relatórios |
-| **Implementado com contrato documentado, aguardando validação contra a API real** | Todos os itens acima (nenhum foi exercitado contra o back-end). Pontos **inferidos** na seção 4 |
+| **Contrato HTTP validado contra a API real (23/11, perfil DONO)** | Autenticação, caminhões, motoristas (listagem e convite com `503`), viagens, lançamentos, finalização, cancelamento, histórica, auditoria, manutenções e indicadores (seção 4A) |
+| **Ainda não validado contra a API real** | Perfil MOTORISTA (sem SMTP para ativar convite); ativação de convite; reenviar/cancelar convite; fluxo pelas telas no navegador (E2E) |
 | **Bloqueado por falta de informação ou contrato** | Publicação em produção (estratégia de CORS/domínio); convite de ponta a ponta (SMTP e URL de ativação no servidor); itens que a API não oferece (seção 5) |
 
 ## 2. Etapas
@@ -28,7 +31,8 @@ parcial, precisa ser conferido na API real.
 | Dashboard e relatórios | Concluída | `fff0d5d` |
 | Viagem histórica (tela) | Concluída | `0d80448` |
 | Documentação e devcontainer | Concluída | commit de documentação desta branch |
-| Validação contra o back-end real | **Pendente** (back-end indisponível) | — |
+| Validação do contrato HTTP contra o back-end real (DONO) | Concluída em 23/11 (seção 4A) | `feat(integracao): conecta frontend a API real` |
+| Validação do perfil MOTORISTA e E2E no navegador | **Pendente** | — |
 
 **Testes:** 187 aprovados, 0 falhas (`npm run test:ci`), contra 41 na linha de base. **Build de produção:** aprovado,
 sem avisos (`npm run build`, ~653 kB iniciais). O build de produção não contém URL de desenvolvimento nem dados de teste.
@@ -82,6 +86,61 @@ o que o front-end envia e espera.
     período vazio com divisões nulas; série do dashboard = 7 chamadas a `/indicadores` (período + 6 meses).
 14. **Datas:** "hoje" calculado em `America/Sao_Paulo`; instantes exibidos no horário de Brasília.
 
+## 4A. Validação contra a API real (23/11/2026)
+
+### Configuração
+
+- **Alvo:** back-end do time rodando no GitHub Codespaces, porta 8080 encaminhada como pública:
+  `https://animated-meme-q74jxw9ggq4whxrvx-8080.app.github.dev` (endereço **temporário**, muda a cada codespace).
+- **Proxy:** `proxy.conf.mjs` lê o alvo de `FROTA_API_ALVO` (padrão `http://localhost:8080`); a URL não fica no código.
+  `changeOrigin` passou a `true`, para que o cabeçalho `Host` enviado seja o do alvo: o encaminhamento de portas
+  do Codespaces roteia por ele, e com `false` iria `localhost:4200` (a validação foi feita só com `true`). Para o
+  alvo local o efeito é nulo.
+- **Comando:** `FROTA_API_ALVO=<url do back-end> npx ng serve` → o navegador chama `http://localhost:4200/api`,
+  sem CORS.
+- **Método:** script Node fora do repositório chamando `localhost:4200/api` (portanto, passando pelo proxy) com os
+  mesmos corpos que os serviços do front enviam, e comparando as chaves de cada resposta com os tipos de
+  `src/app/core/modelos/api.modelos.ts`. Não exercita os componentes Angular.
+
+### Resultado
+
+**60 verificações com o status esperado; nenhuma divergência de campo entre os DTOs do front e as respostas.**
+Uma 61ª verificação ficou fora da contagem por **expectativa incorreta do próprio teste**: enviava `POST` sem corpo
+esperando `415`, e a API respondeu `400` ("Corpo da requisição ausente ou ilegível"), o que está correto. O `415`
+é para `Content-Type` não suportado; conferido à parte (`text/plain` → `415`, "Envie o corpo como application/json.").
+
+| Módulo | Verificado |
+|---|---|
+| Autenticação | registro `201`; e-mail duplicado `409`; login `200` e senha errada `401`; sem token e token inválido `401`; troca de senha com atual errada `400` (sem invalidar a sessão) e válida `204`; JWT com `sub` numérico e `exp` (8 h) |
+| Caminhões | `POST` com `status`/tanque nulos e preenchidos; placa normalizada (`tg-…` → `TG…`); placa duplicada `409`; validação `400`; `PUT` integral; lista com e sem excluídos; inexistente `404`; inativar e excluir com viagem em andamento `409` |
+| Motoristas | listagem; convite → `503` sem SMTP, nada gravado |
+| Viagens | abertura do DONO com `motoristaId` próprio e com `null`, com abastecimento anterior ao início; viagem em andamento no mesmo caminhão `409`; data futura `400`; `PUT` em andamento com `motoristaId` explícito; lista e filtros `status`/`caminhaoId`; detalhe com rentabilidade ao vivo (`resultadoConsolidadoEm` nulo, `pendencias`); finalização com fotografia; finalizar sem frete/destino `400`; cancelar sem motivo `400`; cancelamento `200`; cancelar finalizada `409`; correção de finalizada (`PUT` auditado); `alteracoes` e `fotografias-anteriores`; histórica `201` com lançamentos; inexistente `404` |
+| Lançamentos | abastecimento (Arla e diesel), pedágio e despesa: `POST`, `PUT`, `DELETE`; fora do período `400`; diesel com preço implausível `400`; novo lançamento e exclusão em finalizada `409`; despesa em cancelada (DONO) `201` |
+| Manutenções | `POST`, `PUT`, lista com filtro `caminhaoId`/`de`/`ate`, data futura `400`, `DELETE` `204` |
+| Indicadores | `ano`+`mes`, `de`/`ate`, `semana`, período vazio (divisões `null`, não zero), `por-caminhao` |
+| Formato de erro | `{ status, erro, detalhes }` em todos os `4xx`/`503` recebidos |
+| Datas | instantes em UTC (`…Z`); `hora` volta como `HH:MM:SS` (a tela já exibe `HH:MM`) |
+
+DTOs conferidos campo a campo: `AutenticacaoResponse`, `ErroApi`, `CaminhaoResponse`, `MotoristaResponse`,
+`ViagemResponse`, `ViagemResumoResponse`, `RentabilidadeResponse`, `PoliticaCalculo`, `AbastecimentoResponse`,
+`PedagioResponse`, `DespesaExtraResponse`, `AlteracaoViagemResponse`, `FotografiaAnteriorResponse`,
+`IndicadoresResponse`, `IndicadoresPorCaminhaoResponse`, `ManutencaoResponse`. Os corpos de requisição são os
+dos tipos `*Request` do mesmo arquivo e foram aceitos pela API.
+
+### Limitações e pendências
+
+- **Sem E2E pela interface:** as telas não foram percorridas no navegador contra a API real; a validação cobre o
+  contrato HTTP e o proxy, não renderização, navegação, guards nem mensagens na tela.
+- **Perfil MOTORISTA não validado:** o back-end do Codespaces não tem SMTP, o convite responde `503` e não há como
+  ativar uma conta de motorista. Ficam pendentes: ativação de convite, reenviar/cancelar convite, campos financeiros
+  nulos para o motorista, `403` nas rotas do DONO e `PUT` de viagem sem `motoristaId`.
+- **Mensagens de validação em inglês:** erros de Bean Validation chegam como `"modelo: must not be blank"`,
+  `"eixos: must be greater than or equal to 1"`, `"motivo: must not be blank"`. O front exibe `detalhes` sem
+  reescrever; a tradução cabe ao back-end (apontado ao time).
+- **Dados de teste no back-end:** a validação criou uma empresa fictícia de teste (nome iniciado por `TESTE FRONT`),
+  com caminhões, viagens e manutenções fictícios. Ela é isolada das demais empresas pelo próprio back-end e
+  **não foi removida**, para permitir conferência pelo time.
+
 ## 5. Lacunas da API (apresentadas na interface, não simuladas)
 
 Sem recuperação de senha ("Esqueceu sua senha?" informa que não existe), sem `/me` (nome e perfil vêm do login e ficam
@@ -119,5 +178,7 @@ abastecimento avulso, sem autor de cada lançamento.
 ## 8. Como retomar
 
 1. `git log --oneline origin/main..feat/integracao-http` para ver os commits locais.
-2. `npm ci && npm run test:ci && npm run build` para confirmar o estado.
-3. Subir o back-end e percorrer a lista da seção 4, registrando divergências aqui.
+2. `npm ci && npm run test:ci && npm run build` para confirmar o estado. No Windows sem o Chromium do Puppeteer,
+   defina `CHROME_BIN` com o caminho do Chrome instalado.
+3. Subir o front apontando para o back-end (seção 4A) e fazer o E2E pelas telas; com SMTP disponível, validar o
+   perfil MOTORISTA (itens 5, 7, 8, 9 e 13 da seção 4). Registrar divergências aqui.
