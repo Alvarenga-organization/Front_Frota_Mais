@@ -1,12 +1,15 @@
 /**
  * Configuração de produção.
  *
- * `apiUrl` relativo: o front-end espera ser publicado no mesmo domínio da API
- * (ou atrás de um proxy reverso que encaminhe `/api`). A estratégia de publicação
- * e CORS ainda está pendente de decisão; ajuste aqui quando for definida.
- * Nunca coloque segredos neste arquivo: ele vai para o navegador.
+ * `FROTA_API_URL` é injetada pelo `npm run build:producao` (scripts/build-producao.mjs),
+ * a partir da variável de ambiente de mesmo nome: URL https absoluta da API, já com `/api`.
+ * Sem ela (ex.: `npm run build` puro, testes), vale `/api` relativo: o front-end precisa
+ * ser servido no mesmo domínio da API ou atrás de um proxy reverso que encaminhe `/api`.
+ * Nunca coloque segredos aqui: este valor vai para o navegador.
  */
+declare const FROTA_API_URL: string | undefined;
+
 export const environment = {
   producao: true,
-  apiUrl: '/api'
+  apiUrl: typeof FROTA_API_URL === 'string' ? FROTA_API_URL : '/api'
 };

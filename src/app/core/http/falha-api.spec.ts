@@ -1,4 +1,5 @@
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { TimeoutError } from 'rxjs';
 import { normalizarFalha } from './falha-api';
 
 function resposta(status: number, error: unknown): HttpErrorResponse {
@@ -49,6 +50,13 @@ describe('normalizarFalha', () => {
   it('429 e 403 sem corpo recebem mensagens padrão por status', () => {
     expect(normalizarFalha(resposta(429, null)).detalhes[0]).toContain('Muitas tentativas');
     expect(normalizarFalha(resposta(403, null)).detalhes[0]).toContain('permissão');
+  });
+
+  it('tempo esgotado avisa que a operação pode ter sido gravada (sem sugerir repetir às cegas)', () => {
+    const falha = normalizarFalha(new TimeoutError());
+    expect(falha.status).toBe(0);
+    expect(falha.erro).toBe('Tempo esgotado');
+    expect(falha.detalhes[0]).toContain('confira se o registro foi gravado');
   });
 
   it('erro que não é HTTP vira "erro inesperado"', () => {

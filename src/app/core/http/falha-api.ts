@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { TimeoutError } from 'rxjs';
 
 /**
  * Falha de uma chamada à API, já no formato único da aplicação.
@@ -37,6 +38,9 @@ const CATEGORIA_PADRAO: Record<number, string> = {
   503: 'Serviço indisponível'
 };
 
+const MENSAGEM_TEMPO_ESGOTADO =
+  'O servidor demorou demais para responder. Se você estava salvando, atualize a tela e confira se o registro foi gravado antes de tentar de novo.';
+
 const MENSAGEM_SEM_BACKEND = 'O servidor não respondeu corretamente. Ele pode estar fora do ar; tente de novo em instantes.';
 
 function mensagemPadrao(status: number): string {
@@ -73,6 +77,10 @@ export function normalizarFalha(erro: unknown): FalhaApi {
       erro: corpo?.erro ?? CATEGORIA_PADRAO[status] ?? 'Erro',
       detalhes: corpo?.detalhes.length ? corpo.detalhes : [mensagemPadrao(status)]
     };
+  }
+  if (erro instanceof TimeoutError) {
+    // Sem resposta no prazo: a operação pode ter sido concluída no servidor mesmo assim.
+    return { status: 0, erro: 'Tempo esgotado', detalhes: [MENSAGEM_TEMPO_ESGOTADO] };
   }
   return { status: -1, erro: 'Erro inesperado', detalhes: ['Ocorreu um erro inesperado. Tente de novo.'] };
 }

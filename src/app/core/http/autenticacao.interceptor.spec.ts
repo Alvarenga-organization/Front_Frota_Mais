@@ -1,10 +1,12 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TimeoutError } from 'rxjs';
 import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Router, provideRouter } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { autenticacaoInterceptor } from './autenticacao.interceptor';
 import { SessaoService } from '../sessao/sessao.service';
+import { API_URL, TEMPO_LIMITE_API_MS } from './api.config';
 import { entrarComo, limparSessao } from '../../../testes/sessao-de-teste';
 
 describe('autenticacaoInterceptor', () => {
@@ -121,6 +123,20 @@ describe('autenticacaoInterceptor', () => {
     expect(router.navigateByUrl).not.toHaveBeenCalled();
   });
 
+  it('sem resposta no tempo-limite, falha com TimeoutError e não repete a requisição', fakeAsync(() => {
+    entrarComo('DONO');
+    let erro: unknown;
+    http.get('/api/caminhoes').subscribe({ error: e => (erro = e) });
+    const req = controle.expectOne('/api/caminhoes');
+    tick(TEMPO_LIMITE_API_MS - 1);
+    expect(erro).toBeUndefined();
+    tick(1);
+    expect(erro).toEqual(jasmine.any(TimeoutError));
+    expect(req.cancelled).toBeTrue();
+    controle.expectNone('/api/caminhoes');
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
+  }));
+
   it('não escreve o token no console', () => {
     const espioes = (['log', 'info', 'warn', 'error', 'debug'] as const).map(m => spyOn(console, m));
     const sessao = entrarComo('DONO');
@@ -132,5 +148,62 @@ describe('autenticacaoInterceptor', () => {
         expect(JSON.stringify(chamada)).not.toContain(token);
       }
     }
+  });
+});
+
+describe('autenticacaoInterceptor com a API em outro domínio (produção)', () => {
+  const API = 'https://api.frota.exemplo.test/api';
+  let http: HttpClient;
+  let controle: HttpTestingController;
+  let router: Router;
+
+  beforeEach(() => {
+    limparSessao();
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withInterceptors([autenticacaoInterceptor])),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        { provide: API_URL, useValue: API },
+        { provide: MatDialog, useValue: jasmine.createSpyObj<MatDialog>('MatDialog', ['closeAll']) }
+      ]
+    });
+    http = TestBed.inject(HttpClient);
+    controle = TestBed.inject(HttpTestingController);
+    router = TestBed.inject(Router);
+    spyOn(router, 'navigateByUrl').and.resolveTo(true);
+  });
+
+  afterEach(() => {
+    controle.verify();
+    limparSessao();
+  });
+
+  it('anexa o token só às rotas protegidas da URL absoluta da API', () => {
+    const sessao = entrarComo('DONO');
+    http.get(`${API}/caminhoes`).subscribe();
+    const req = controle.expectOne(`${API}/caminhoes`);
+    expect(req.request.headers.get('Authorization')).toBe(`Bearer ${sessao.token()}`);
+    req.flush([]);
+  });
+
+  it('não envia token ao login nem a outros caminhos ou domínios', () => {
+    entrarComo('DONO');
+    http.post(`${API}/auth/login`, {}).subscribe();
+    http.get('https://api.frota.exemplo.test/actuator/health').subscribe();
+    http.get('https://api.frota.exemplo.test.atacante.test/api/caminhoes').subscribe();
+    http.get('/api/caminhoes').subscribe();
+    controle.match(() => true).forEach(req => {
+      expect(req.request.headers.has('Authorization')).withContext(req.request.url).toBeFalse();
+      req.flush({});
+    });
+  });
+
+  it('401 na API absoluta encerra a sessão e vai ao login', () => {
+    const sessao = entrarComo('DONO');
+    http.get(`${API}/viagens`).subscribe({ error: () => undefined });
+    controle.expectOne(`${API}/viagens`).flush(null, { status: 401, statusText: 'Unauthorized' });
+    expect(sessao.sessao()).toBeNull();
+    expect(router.navigateByUrl).toHaveBeenCalledOnceWith('/login');
   });
 });

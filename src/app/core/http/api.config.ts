@@ -9,6 +9,12 @@ export const API_URL = new InjectionToken<string>('API_URL', {
 });
 
 /**
+ * Tempo máximo de espera por resposta da API. Folgado de propósito: hospedagens que
+ * suspendem o servidor sem uso podem levar dezenas de segundos para acordá-lo.
+ */
+export const TEMPO_LIMITE_API_MS = 90_000;
+
+/**
  * Rotas públicas (sem `Authorization`): registro, login e ativação de convite.
  * `/auth/senha` é protegida e por isso não está aqui.
  */
