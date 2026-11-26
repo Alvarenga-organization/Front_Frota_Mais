@@ -9,6 +9,13 @@ import { perfilGuard, semSessaoGuard, sessaoAtivaGuard } from './core/sessao/ses
 // e somente o conteúdo do router-outlet do layout é trocado.
 // `data.perfis` esconde telas do perfil sem acesso; a autorização real é do servidor.
 const routes: Routes = [
+  // Página inicial pública; quem já tem sessão segue para o início do perfil.
+  {
+    path: '',
+    pathMatch: 'full',
+    canActivate: [semSessaoGuard],
+    loadChildren: () => import('./pages/apresentacao/apresentacao.module').then(m => m.ApresentacaoModule)
+  },
   {
     path: '',
     canActivate: [semSessaoGuard],

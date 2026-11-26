@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Frota+ — Login</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif}
+a{color:#0B57D0}a:hover{color:#08408F}
+.grid-bg{background-color:#0A2A5E;background-image:radial-gradient(rgba(255,255,255,.09) 1px,transparent 1px);background-size:22px 22px}
+input:focus{outline:none}
+.field:focus-within{border-color:#0B57D0;box-shadow:0 0 0 3px rgba(11,87,208,.15)}
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #FFFFFF; color: #0F1B2D">
+
+<!-- Lado do formulário -->
+<div style="flex: 1 1 460px; display: flex; flex-direction: column; padding: 48px 72px; box-sizing: border-box; min-width: 0">
+<a href="Inicio.dc.html" aria-label="Voltar à página inicial" style="display: flex; align-items: center; gap: 12px; align-self: flex-start">
+<svg width="56" height="56" viewBox="0 0 80 80" aria-hidden="true"><circle cx="38" cy="42" r="32" fill="none" stroke="#0B57D0" stroke-width="5"></circle><path d="M66 4v20M56 14h20" stroke="#0B57D0" stroke-width="5" stroke-linecap="round"></path><text x="38" y="47" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="14" fill="#0B57D0">FROTA</text></svg>
+</a>
+
+<div style="flex: 1; display: flex; flex-direction: column; justify-content: center; max-width: 440px; width: 100%; padding: 40px 0">
+<h1 style="margin: 0 0 10px; font-size: 44px; line-height: 1.1; font-weight: 800; letter-spacing: -0.02em; color: #0B57D0">Bem-vindo(a)!</h1>
+<p style="margin: 0 0 36px; font-size: 16px; line-height: 1.5; color: #4A5568">Faça login para acessar o sistema de controle da sua frota.</p>
+
+<form style="display: flex; flex-direction: column; gap: 18px; margin: 0">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="email" style="font-size: 14px; font-weight: 600; color: #1F2A3C">E-mail</label>
+<div class="field" style="display: flex; align-items: center; gap: 10px; height: 50px; padding: 0 16px; border: 1px solid #D5DCE6; border-radius: 10px; background: #FFFFFF">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B7689" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m3 7 9 6 9-6"></path></svg>
+<input id="email" type="email" placeholder="seu@email.com.br" style="flex: 1; border: 0; font: inherit; font-size: 15px; color: #0F1B2D; background: transparent; min-width: 0">
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<label for="senha" style="font-size: 14px; font-weight: 600; color: #1F2A3C">Senha</label>
+<a href="#" style="font-size: 13px; font-weight: 500; text-decoration: none">Esqueci minha senha</a>
+</div>
+<div class="field" style="display: flex; align-items: center; gap: 10px; height: 50px; padding: 0 6px 0 16px; border: 1px solid #D5DCE6; border-radius: 10px; background: #FFFFFF">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B7689" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+<input id="senha" type="{{pwType}}" placeholder="Digite sua senha" style="flex: 1; border: 0; font: inherit; font-size: 15px; color: #0F1B2D; background: transparent; min-width: 0">
+<button type="button" onClick="{{togglePw}}" aria-label="Mostrar ou ocultar senha" style="width: 44px; height: 44px; border: 0; background: transparent; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7689" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+</button>
+</div>
+</div>
+
+<label style="display: flex; align-items: center; gap: 10px; font-size: 14px; color: #4A5568; cursor: pointer"><input type="checkbox" style="width: 18px; height: 18px; accent-color: #0B57D0; margin: 0">Manter conectado</label>
+
+<a href="#" style="display: flex; align-items: center; justify-content: center; height: 52px; margin-top: 6px; border-radius: 10px; background: #0B57D0; color: #FFFFFF; font-size: 16px; font-weight: 600; text-decoration: none; box-shadow: 0 6px 16px rgba(11,87,208,.25)">Entrar</a>
+
+<div style="display: flex; align-items: center; gap: 12px; color: #8A94A6; font-size: 13px"><div style="flex: 1; height: 1px; background: #E3E8EF"></div>ou<div style="flex: 1; height: 1px; background: #E3E8EF"></div></div>
+
+<a href="#" style="display: flex; align-items: center; justify-content: center; height: 52px; border-radius: 10px; border: 1.5px solid #0B57D0; color: #0B57D0; font-size: 16px; font-weight: 600; text-decoration: none">Criar conta</a>
+</form>
+</div>
+
+<p style="margin: 0; font-size: 13px; color: #6B7689">© 2026 Frota+ · Todos os direitos reservados</p>
+</div>
+
+<!-- Lado azul -->
+<div class="grid-bg" style="flex: 1.25 1 520px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: 40px; padding: 64px 80px; box-sizing: border-box; color: #FFFFFF; min-width: 0">
+<div style="position: absolute; right: -160px; top: -160px; width: 520px; height: 520px; border-radius: 50%; border: 60px solid rgba(255,255,255,.04)" aria-hidden="true"></div>
+
+<div style="display: flex; flex-direction: column; gap: 16px; max-width: 520px; position: relative">
+<span style="align-self: flex-start; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.12); font-size: 13px; font-weight: 600; letter-spacing: .02em; color: #CFE0FF">Sistema de gestão de frotas</span>
+<h2 style="margin: 0; font-size: 44px; line-height: 1.1; font-weight: 800; letter-spacing: -0.02em">Gestão completa da sua frota</h2>
+<p style="margin: 0; font-size: 17px; line-height: 1.55; color: #C3D3EE">Mais controle, menos custos, e a sua frota sempre em movimento.</p>
+</div>
+
+<!-- Prévia do sistema -->
+<div style="position: relative; max-width: 560px; width: 100%">
+<div style="background: #FFFFFF; border-radius: 16px; padding: 20px; color: #0F1B2D; box-shadow: 0 24px 60px rgba(0,0,0,.35)">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px">
+<span style="font-size: 14px; font-weight: 700">Veículos em rota</span>
+<span style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #0F7A3D"><span style="width: 8px; height: 8px; border-radius: 50%; background: #16A34A"></span>Ao vivo</span>
+</div>
+<div style="height: 150px; border-radius: 10px; background: #EEF3FA; position: relative; overflow: hidden">
+<svg width="100%" height="150" viewBox="0 0 520 150" preserveAspectRatio="none" aria-hidden="true"><path d="M0 40h520M0 100h520M120 0v150M300 0v150M430 0v150" stroke="#DCE4F0" stroke-width="10"></path><path d="M30 120 C120 120 120 40 220 50 S340 110 420 70 S490 30 505 30" fill="none" stroke="#0B57D0" stroke-width="4" stroke-dasharray="1 0" stroke-linecap="round"></path><circle cx="30" cy="120" r="7" fill="#FFFFFF" stroke="#0B57D0" stroke-width="3"></circle><circle cx="505" cy="30" r="7" fill="#0B57D0"></circle><circle cx="300" cy="86" r="11" fill="#F59E0B" stroke="#FFFFFF" stroke-width="3"></circle></svg>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px">
+<div style="padding: 10px 12px; border-radius: 10px; background: #F5F8FC"><div style="font-size: 12px; color: #5B6577">Em rota</div><div style="font-size: 20px; font-weight: 800; color: #0B57D0">12</div></div>
+<div style="padding: 10px 12px; border-radius: 10px; background: #F5F8FC"><div style="font-size: 12px; color: #5B6577">Na garagem</div><div style="font-size: 20px; font-weight: 800">5</div></div>
+<div style="padding: 10px 12px; border-radius: 10px; background: #F5F8FC"><div style="font-size: 12px; color: #5B6577">Manutenção</div><div style="font-size: 20px; font-weight: 800; color: #B45309">2</div></div>
+</div>
+</div>
+</div>
+
+<!-- Recursos -->
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 28px; max-width: 560px; position: relative">
+<div style="display: flex; gap: 12px; align-items: center"><span style="width: 40px; height: 40px; flex: none; border-radius: 10px; background: rgba(255,255,255,.12); display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z"></path><circle cx="12" cy="10" r="2.5"></circle></svg></span><span style="font-size: 15px; font-weight: 500">Rastreamento em tempo real</span></div>
+<div style="display: flex; gap: 12px; align-items: center"><span style="width: 40px; height: 40px; flex: none; border-radius: 10px; background: rgba(255,255,255,.12); display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5Z"></path></svg></span><span style="font-size: 15px; font-weight: 500">Controle de manutenções</span></div>
+<div style="display: flex; gap: 12px; align-items: center"><span style="width: 40px; height: 40px; flex: none; border-radius: 10px; background: rgba(255,255,255,.12); display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M14 10h2a2 2 0 0 1 2 2v4a1.5 1.5 0 0 0 3 0V8l-3-3"></path><path d="M7 7h4v4H7z"></path></svg></span><span style="font-size: 15px; font-weight: 500">Gestão de abastecimentos</span></div>
+<div style="display: flex; gap: 12px; align-items: center"><span style="width: 40px; height: 40px; flex: none; border-radius: 10px; background: rgba(255,255,255,.12); display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg></span><span style="font-size: 15px; font-weight: 500">Relatórios de custos</span></div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { show: false }; }
+  renderVals() {
+    return {
+      pwType: this.state.show ? 'text' : 'password',
+      togglePw: () => this.setState({ show: !this.state.show })
+    };
+  }
+}
+</script>
+</body>
+</html>

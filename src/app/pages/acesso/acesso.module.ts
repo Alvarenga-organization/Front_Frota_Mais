@@ -8,6 +8,7 @@ import { LoginComponent } from './login/login.component';
 import { CriarContaComponent } from './criar-conta/criar-conta.component';
 import { AtivarContaComponent } from './ativar-conta/ativar-conta.component';
 import { CampoSenhaComponent } from './campo-senha/campo-senha.component';
+import { VitrineModule } from '../../compartilhado/vitrine/vitrine.module';
 
 // Telas públicas, fora do layout com menu (Figma: "login", "Criar conta").
 const routes: Routes = [
@@ -25,6 +26,6 @@ const routes: Routes = [
 
 @NgModule({
   declarations: [AcessoComponent, LoginComponent, CriarContaComponent, AtivarContaComponent, CampoSenhaComponent],
-  imports: [CommonModule, ReactiveFormsModule, MatSnackBarModule, RouterModule.forChild(routes)]
+  imports: [CommonModule, ReactiveFormsModule, MatSnackBarModule, VitrineModule, RouterModule.forChild(routes)]
 })
 export class AcessoModule {}

@@ -11,7 +11,7 @@ import { normalizarFalha } from '../../../core/http/falha-api';
   selector: 'app-login',
   standalone: false,
   templateUrl: './login.component.html',
-  styleUrls: ['../acesso-formulario.css', '../campo-acesso.css']
+  styleUrls: ['./login.component.css']
 })
 export class LoginComponent {
   private readonly auth = inject(AuthService);
@@ -31,6 +31,8 @@ export class LoginComponent {
   readonly sessaoEncerrada = inject(SessaoService).consumirMotivo() === 'expirada';
 
   mostrarAvisoSenha = false;
+  /** Só visual: alterna o tipo do campo de senha. */
+  senhaVisivel = false;
 
   entrar(): void {
     if (this.enviando()) return;

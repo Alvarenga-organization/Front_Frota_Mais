@@ -1,0 +1,128 @@
+<header class="cabecalho">
+  <div class="conteudo cabecalho-interno">
+    <a routerLink="/" class="marca" aria-label="Frota+ — início">
+      <img src="imagens/logo.png" alt="" width="48" height="48">
+    </a>
+    <nav class="menu" aria-label="Seções da página">
+      <a href="#recursos">Recursos</a>
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#beneficios">Benefícios</a>
+      <a href="#contato">Contato</a>
+    </nav>
+    <div class="acoes">
+      <a routerLink="/login" class="botao contorno">Entrar</a>
+      <a routerLink="/criar-conta" class="botao primario">Criar conta</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="conteudo heroi">
+    <div class="heroi-texto">
+      <span class="etiqueta">Sistema de gestão de frotas</span>
+      <h1>Gestão completa da sua <span class="destaque">frota</span></h1>
+      <p>Mais controle, menos custos, e a sua frota sempre em movimento. Caminhões, motoristas, viagens,
+        abastecimentos e manutenções em um só lugar.</p>
+      <div class="heroi-botoes">
+        <a routerLink="/login" class="botao primario grande sombra">
+          Começar agora <app-icone-traco nome="seta" [tamanho]="18" [espessura]="2.4"></app-icone-traco>
+        </a>
+        <a href="#como-funciona" class="botao neutro grande">Como funciona</a>
+      </div>
+    </div>
+
+    <div class="heroi-painel fundo-marinho">
+      <span class="anel" aria-hidden="true"></span>
+      <app-previa-sistema [alturaMapa]="170"></app-previa-sistema>
+      <div class="avisos" aria-hidden="true">
+        <div class="aviso">
+          <span class="aviso-icone ambar"><app-icone-traco nome="manutencao" [tamanho]="18"></app-icone-traco></span>
+          <div><strong>Manutenção registrada</strong><small>ABC-1D23</small></div>
+        </div>
+        <div class="aviso">
+          <span class="aviso-icone verde"><app-icone-traco nome="confirmar" [tamanho]="18" [espessura]="2.4"></app-icone-traco></span>
+          <div><strong>Abastecimento lançado</strong><small>FRT-2B45</small></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="recursos" class="secao fundo-claro">
+    <div class="conteudo">
+      <div class="secao-titulo">
+        <span class="sobretitulo">Recursos</span>
+        <h2>Tudo o que você precisa para controlar a frota</h2>
+      </div>
+      <div class="grade-recursos">
+        @for (recurso of recursos; track recurso.titulo) {
+          <article class="cartao">
+            <span class="cartao-icone"><app-icone-traco [nome]="recurso.icone" [tamanho]="24"></app-icone-traco></span>
+            <h3>{{ recurso.titulo }}</h3>
+            <p>{{ recurso.descricao }}</p>
+          </article>
+        }
+      </div>
+    </div>
+  </section>
+
+  <section id="como-funciona" class="secao">
+    <div class="conteudo">
+      <div class="secao-titulo">
+        <span class="sobretitulo">Como funciona</span>
+        <h2>Comece em três passos</h2>
+      </div>
+      <ol class="grade-passos">
+        @for (passo of passos; track passo.titulo; let i = $index) {
+          <li class="passo">
+            <span class="passo-numero" aria-hidden="true">{{ i + 1 }}</span>
+            <h3>{{ passo.titulo }}</h3>
+            <p>{{ passo.descricao }}</p>
+          </li>
+        }
+      </ol>
+    </div>
+  </section>
+
+  <section id="beneficios" class="secao fundo-marinho beneficios">
+    <div class="conteudo beneficios-interno">
+      <div class="beneficios-texto">
+        <span class="sobretitulo claro">Benefícios</span>
+        <h2>Menos planilhas, mais controle</h2>
+        <p>Troque anotações soltas e planilhas por um sistema que mostra quanto cada frete realmente rendeu.</p>
+      </div>
+      <ul class="grade-beneficios">
+        @for (beneficio of beneficios; track beneficio) {
+          <li>
+            <app-icone-traco nome="confirmar" [tamanho]="22" [espessura]="2.4"></app-icone-traco>
+            <span>{{ beneficio }}</span>
+          </li>
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section id="contato" class="secao">
+    <div class="conteudo chamada">
+      <h2>Pronto para colocar sua frota em ordem?</h2>
+      <p>Crie sua conta e comece a cadastrar seus caminhões hoje mesmo.</p>
+      <div class="chamada-botoes">
+        <a routerLink="/criar-conta" class="botao primario grande">Criar conta</a>
+        <a routerLink="/login" class="botao neutro grande">Já tenho conta</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="rodape">
+  <div class="conteudo rodape-interno">
+    <div class="rodape-marca">
+      <img src="imagens/logo.png" alt="Frota+" width="36" height="36">
+      <span>© {{ ano }} Frota+ · Todos os direitos reservados</span>
+    </div>
+    <nav class="rodape-links" aria-label="Rodapé">
+      <a href="#recursos">Recursos</a>
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#contato">Contato</a>
+    </nav>
+  </div>
+</footer>

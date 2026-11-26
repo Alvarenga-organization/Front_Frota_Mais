@@ -1,0 +1,247 @@
+/* Tela de login. Referência visual: design/Main.dc.html. */
+
+:host {
+    display: block;
+    max-width: 440px;
+    width: 100%;
+    color: #0F1B2D;
+}
+
+h1 {
+    margin: 0 0 10px;
+    font-size: 44px;
+    line-height: 1.1;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #0B57D0;
+}
+
+.descricao {
+    margin: 0 0 36px;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #4A5568;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1F2A3C;
+}
+
+.rotulo-linha {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.caixa-campo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 50px;
+    padding: 0 16px;
+    border: 1px solid #D5DCE6;
+    border-radius: 10px;
+    background: #FFFFFF;
+    box-sizing: border-box;
+}
+
+.caixa-campo.com-botao {
+    padding-right: 4px;
+}
+
+.caixa-campo:focus-within {
+    border-color: #0B57D0;
+    box-shadow: 0 0 0 3px rgba(11, 87, 208, .15);
+}
+
+.caixa-campo > svg,
+.alternar svg {
+    width: 18px;
+    height: 18px;
+    flex: none;
+    fill: none;
+    stroke: #6B7689;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.alternar svg {
+    width: 20px;
+    height: 20px;
+}
+
+input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font: inherit;
+    font-size: 15px;
+    color: #0F1B2D;
+}
+
+input::placeholder {
+    color: #8A94A6;
+}
+
+.alternar {
+    width: 44px;
+    height: 44px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+}
+
+.alternar:hover {
+    background: #F4F7FB;
+}
+
+.link {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    color: #0B57D0;
+    cursor: pointer;
+}
+
+.link:hover {
+    color: #08408F;
+    text-decoration: underline;
+}
+
+.botao {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 52px;
+    border-radius: 10px;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.botao.primario {
+    margin-top: 6px;
+    border: 0;
+    background: #0B57D0;
+    color: #FFFFFF;
+    box-shadow: 0 6px 16px rgba(11, 87, 208, .25);
+}
+
+.botao.primario:hover:not(:disabled) {
+    background: #08408F;
+}
+
+.botao.primario:disabled {
+    opacity: .6;
+    cursor: progress;
+}
+
+.botao.contorno {
+    border: 1.5px solid #0B57D0;
+    background: #FFFFFF;
+    color: #0B57D0;
+}
+
+.botao.contorno:hover {
+    border-color: #08408F;
+    color: #08408F;
+}
+
+.botao:focus-visible,
+.link:focus-visible,
+.alternar:focus-visible {
+    outline: 3px solid #9CC0FF;
+    outline-offset: 2px;
+}
+
+.separador {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: #8A94A6;
+}
+
+.separador span {
+    flex: 1;
+    height: 1px;
+    background: #E3E8EF;
+}
+
+.erro-campo {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #B3261E;
+}
+
+.observacao {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #586A7F;
+}
+
+.alerta {
+    margin: 0 0 24px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: #FDECEA;
+    color: #8C1D18;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.alerta.informativo {
+    background: #EAF1FF;
+    color: #0A2A5E;
+}
+
+.alerta p {
+    margin: 0;
+}
+
+@media (max-width: 600px) {
+    h1 {
+        font-size: 32px;
+    }
+
+    .descricao {
+        font-size: 15px;
+        margin-bottom: 28px;
+    }
+
+    input {
+        font-size: 16px; /* evita o zoom automático do iOS ao focar */
+    }
+}
