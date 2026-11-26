@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/api/:caminho*",
+      "destination": "https://animated-meme-q74jxw9ggq4whxrvx-8080.app.github.dev/api/:caminho*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
