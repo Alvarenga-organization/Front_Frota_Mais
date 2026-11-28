@@ -23,7 +23,7 @@ export function viagemEmAndamento(parcial: Partial<ViagemResponse> = {}): Viagem
     consumoMedioVazio: 3.2, consumoMedioCarregado: null,
     criadaEm: '2025-03-05T11:02:10Z', atualizadaEm: '2025-03-05T11:02:10Z', finalizadaEm: null,
     cadastroRetroativoEm: null, canceladaEm: null, motivoCancelamento: null,
-    abastecimentosDiesel: [{ id: 901, tipo: 'DIESEL', data: '2025-03-04', hora: '18:30:00', litros: 100, valorTotal: 640 }],
+    abastecimentosDiesel: [{ id: 901, tipo: 'DIESEL', data: '2025-03-04', quilometragem: 99950, hora: null, litros: 100, valorTotal: 640 }],
     abastecimentosArla: [],
     pedagios: [{ id: 950, data: '2025-03-05', valor: 25.4 }],
     despesasExtras: [{ id: 960, descricao: 'Almoço do motorista', data: '2025-03-05', valor: 35 }],

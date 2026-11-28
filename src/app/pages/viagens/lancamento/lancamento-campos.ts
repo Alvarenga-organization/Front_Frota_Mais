@@ -3,12 +3,14 @@ import {
   AbastecimentoRequest, AbastecimentoResponse, DespesaExtraRequest, DespesaExtraResponse, PedagioRequest, PedagioResponse,
   TipoCombustivel
 } from '../../../core/modelos/api.modelos';
-import { FORMATO, decimalPositivoValidator, paraDecimalApi } from '../../../compartilhado/validadores';
+import {
+  FORMATO, decimalPositivoValidator, paraDecimalApi, paraQuilometragemApi, quilometragemValidator
+} from '../../../compartilhado/validadores';
 
 export type GrupoAbastecimento = FormGroup<{
   tipo: FormControl<TipoCombustivel>;
   data: FormControl<string>;
-  hora: FormControl<string>;
+  quilometragem: FormControl<number | null>;
   litros: FormControl<string>;
   valorTotal: FormControl<string>;
 }>;
@@ -26,12 +28,21 @@ export type GrupoDespesa = FormGroup<{
 
 export const LIMITE_DESCRICAO_DESPESA = 200;
 
+/**
+ * Quilometragem obrigatória em abastecimento novo e depois de informada (não pode ser apagada).
+ * Só a correção de registro antigo sem km (`quilometragem: null`) pode continuar sem ela.
+ */
+export function quilometragemObrigatoria(atual?: AbastecimentoResponse): boolean {
+  return !atual || atual.quilometragem !== null;
+}
+
 /** Campos do AbastecimentoRequest. Plausibilidade do preço e tanque são do servidor (400). */
 export function grupoAbastecimento(fb: FormBuilder, dataPadrao: string, atual?: AbastecimentoResponse, tipo: TipoCombustivel = 'DIESEL'): GrupoAbastecimento {
+  const km = quilometragemObrigatoria(atual) ? [Validators.required, quilometragemValidator] : [quilometragemValidator];
   return fb.nonNullable.group({
     tipo: [atual?.tipo ?? tipo, Validators.required],
     data: [atual?.data ?? dataPadrao, Validators.required],
-    hora: [atual?.hora ? atual.hora.slice(0, 5) : ''],
+    quilometragem: [atual?.quilometragem ?? null as number | null, km],
     litros: [atual ? String(atual.litros) : '', [Validators.required, decimalPositivoValidator(FORMATO.litros.casas, FORMATO.litros.inteiros)]],
     valorTotal: [atual ? String(atual.valorTotal) : '', [Validators.required, decimalPositivoValidator(FORMATO.dinheiro.casas, FORMATO.dinheiro.inteiros)]]
   });
@@ -58,7 +69,8 @@ export function paraAbastecimentoRequest(grupo: GrupoAbastecimento): Abastecimen
   return {
     tipo: v.tipo,
     data: v.data,
-    hora: v.hora ? v.hora : null,
+    // O grupo já foi validado: aqui `null` só sobra no registro antigo sem km.
+    quilometragem: paraQuilometragemApi(v.quilometragem),
     litros: paraDecimalApi(v.litros, FORMATO.litros.casas) ?? '',
     valorTotal: paraDecimalApi(v.valorTotal, FORMATO.dinheiro.casas) ?? ''
   };

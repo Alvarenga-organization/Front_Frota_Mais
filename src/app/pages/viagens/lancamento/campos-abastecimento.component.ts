@@ -1,10 +1,11 @@
 import { Component, Input } from '@angular/core';
+import { Validators } from '@angular/forms';
 import { FORMATO } from '../../../compartilhado/validadores';
 import { GrupoAbastecimento, precoPorLitroDigitado } from './lancamento-campos';
 
 let proximoId = 0;
 
-/** Campos de um abastecimento (tipo, data, hora opcional, litros, valor pago). */
+/** Campos de um abastecimento (tipo, data, quilometragem, litros, valor pago). */
 @Component({
   selector: 'app-campos-abastecimento',
   standalone: false,
@@ -29,8 +30,15 @@ let proximoId = 0;
         }
       </div>
       <div class="campo">
-        <label [for]="id + '-hora'">Hora <span class="opcional">— opcional</span></label>
-        <input [id]="id + '-hora'" type="time" formControlName="hora">
+        <label [for]="id + '-km'">Quilometragem do caminhão (km)
+          @if (!kmObrigatoria()) { <span class="opcional">— registro antigo, opcional</span> }
+        </label>
+        <input [id]="id + '-km'" type="number" inputmode="numeric" step="1" min="0" [max]="formato.km.maximo"
+          formControlName="quilometragem" placeholder="Odômetro no abastecimento" [attr.aria-invalid]="invalido('quilometragem')"
+          [attr.aria-describedby]="invalido('quilometragem') ? id + '-km-erro' : null">
+        @if (invalido('quilometragem')) {
+          <p class="erro-campo-formulario" [id]="id + '-km-erro'">Informe a quilometragem do odômetro (número inteiro de 0 a 9.999.999).</p>
+        }
       </div>
       <div class="campo">
         <label [for]="id + '-litros'">Litros</label>
@@ -62,7 +70,12 @@ export class CamposAbastecimentoComponent {
   readonly id = `abastecimento-${++proximoId}`;
   readonly formato = FORMATO;
 
-  invalido(campo: 'data' | 'litros' | 'valorTotal'): boolean {
+  /** Falso só na correção de registro antigo sem km (ver `quilometragemObrigatoria`). */
+  kmObrigatoria(): boolean {
+    return this.grupo.controls.quilometragem.hasValidator(Validators.required);
+  }
+
+  invalido(campo: 'data' | 'quilometragem' | 'litros' | 'valorTotal'): boolean {
     const controle = this.grupo.controls[campo];
     return controle.invalid && (controle.touched || controle.dirty);
   }

@@ -46,12 +46,54 @@ deste front-end: `http://<host>/ativar-conta` (o link do e-mail acrescenta `?tok
 ### Build
 
 ```bash
-npm run build   # produção em dist/modelo-projeto-integrador/browser
+npm run build                                               # /api relativo
+FROTA_API_URL=https://api.exemplo.com npm run build:producao  # URL pública da API
 ```
 
-Em produção a URL da API é `/api` relativa (`src/environments/environment.ts`): o front-end precisa ser servido no
-mesmo domínio da API ou atrás de um proxy reverso que encaminhe `/api`. A estratégia de publicação e de CORS ainda
-está **pendente de decisão**. A hospedagem precisa devolver `index.html` para rotas desconhecidas (SPA).
+Saída em `dist/modelo-projeto-integrador/browser`.
+
+- `npm run build` usa `/api` relativo (`src/environments/environment.ts`): o front-end precisa ser servido no mesmo
+  domínio da API ou atrás de um proxy reverso que encaminhe `/api`.
+- `npm run build:producao` ([`scripts/build-producao.mjs`](scripts/build-producao.mjs)) lê `FROTA_API_URL` — só a
+  **origem** https da API, sem caminho; o `/api` é acrescentado pelo script. Recusa http, usuário/senha na URL,
+  localhost, IPs privados e Codespaces, e depois do build confere que o bundle aponta para a URL informada e não
+  contém endereços de desenvolvimento. A URL não é segredo (vai para o navegador), mas fica fora do código.
+  Com API em outro domínio, o back-end precisa liberar CORS **para a origem do front-end** (nunca `*`).
+  Também recusa endereços `*.vercel.app` (a API não é servida pela Vercel). Sem a variável, **o build falha**.
+
+Para conferir um bundle já gerado: `grep -o "code\.run/api" dist/modelo-projeto-integrador/browser/*.js` deve achar a
+URL da API, e nenhum arquivo pode conter `localhost:`, `.github.dev` nem `"/api/` relativo.
+
+### Publicação na Vercel
+
+O [`vercel.json`](vercel.json) fixa a configuração (o painel não precisa de ajuste manual de build):
+
+| Item | Valor |
+|---|---|
+| Instalação | `npm ci` |
+| Build | `npm run build:producao` |
+| Saída | `dist/modelo-projeto-integrador/browser` |
+| SPA | toda rota que não começa com `/api/` devolve `index.html`; `/api/*` no domínio da Vercel dá `404` de propósito |
+| Variável | `FROTA_API_URL` em *Settings → Environment Variables* (Production), com a **origem** https da API, sem `/api` |
+
+A origem publicada do front-end é `https://front-frota-mais.vercel.app`; é ela que o back-end libera no CORS. Deploys de
+*preview* têm outra origem e, por isso, não conversam com a API enquanto o CORS listar só a de produção.
+Nenhum segredo (banco, JWT, SMTP) pertence ao front-end: a única variável é a URL pública da API.
+
+As chamadas à API têm tempo-limite de 90 s; ao estourar, a tela mostra "Tempo esgotado" avisando que a operação pode
+ter sido gravada (não há repetição automática).
+
+### Contrato da API (1.2)
+
+Os tipos ficam só em `src/app/core/modelos/api.modelos.ts`. A partir do contrato 1.2 a API responde `400` a campo
+desconhecido, então os corpos enviados precisam ter exatamente os campos dos tipos `*Request`.
+
+- **Abastecimento:** `quilometragem` (odômetro, km inteiro de 0 a 9.999.999) substitui `hora`, que não é mais enviada.
+  É obrigatória em abastecimento novo (lançamento, abertura da viagem e viagem histórica); decimal, texto ou valor fora
+  da faixa bloqueiam o envio, sem arredondar.
+- **Registros antigos:** `quilometragem: null` aparece como "km não informada" (nunca zero; a `hora` antiga não é
+  exibida). Na correção, o campo pode continuar vazio; depois de informado, não pode ser apagado.
+- Pedágio (data e valor pago) e despesa extra (descrição livre, data e valor) não mudaram.
 
 ## Testes
 

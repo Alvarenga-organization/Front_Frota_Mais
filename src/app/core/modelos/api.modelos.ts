@@ -1,7 +1,7 @@
 /**
  * Tipos dos contratos da API do Frota+ (requisições e respostas).
  * Único lugar onde os DTOs são definidos. Os nomes dos campos precisam ser
- * idênticos aos do backend: a API ignora campos desconhecidos em silêncio.
+ * idênticos aos do backend (contrato 1.2): a API responde 400 a campo desconhecido.
  *
  * Convenções:
  * - Campos que o servidor pode devolver nulos são `T | null`.
@@ -123,10 +123,16 @@ export type StatusViagem = 'EM_ANDAMENTO' | 'FINALIZADA' | 'CANCELADA';
 export type TipoCombustivel = 'DIESEL' | 'ARLA';
 export type OrigemPrecoDiesel = 'ABASTECIMENTOS_DA_VIAGEM' | 'ULTIMO_PRECO_DO_CAMINHAO' | 'SEM_REFERENCIA';
 
+/**
+ * Contrato 1.2: `quilometragem` é o odômetro do caminhão no abastecimento (km inteiro,
+ * 0 a 9.999.999). Obrigatória em todo abastecimento novo (lançamento, abertura e histórica)
+ * e depois de informada; `null` só ao corrigir registro antigo que nunca teve km.
+ * O campo `hora` do contrato 1.1 não é mais aceito (a API responde 400 a campo desconhecido).
+ */
 export interface AbastecimentoRequest {
   tipo: TipoCombustivel;
   data: DataIso;
-  hora: HoraIso | null;
+  quilometragem: number | null;
   litros: Decimal;
   valorTotal: Dinheiro;
 }
@@ -146,6 +152,9 @@ export interface AbastecimentoResponse {
   id: number;
   tipo: TipoCombustivel;
   data: DataIso;
+  /** Nula em registros antigos ("km não informada"); nunca tratar como zero. */
+  quilometragem: number | null;
+  /** Legado do contrato 1.1, ainda devolvido pela API. Não é exibido nem reenviado. */
   hora: HoraIso | null;
   litros: number;
   valorTotal: number;

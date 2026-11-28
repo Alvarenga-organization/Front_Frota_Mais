@@ -133,7 +133,8 @@
           <ul class="lista-lancamentos">
             @for (item of v.abastecimentosDiesel; track item.id) {
               <li [attr.data-lancamento]="'abastecimento-' + item.id">
-                <span>{{ item.data | data }}{{ item.hora ? ' ' + item.hora.slice(0, 5) : '' }}</span>
+                <span>{{ item.data | data }}</span>
+                <span [class.secundario]="item.quilometragem === null">{{ item.quilometragem === null ? 'km não informada' : (item.quilometragem | numero:0) + ' km' }}</span>
                 <span>{{ item.litros | numero:3 }} L</span>
                 <span>{{ item.valorTotal | moeda }} pagos</span>
                 <ng-container *ngTemplateOutlet="acoesItem; context: { $implicit: a, tipo: 'abastecimentos', item: item, descricao: descricaoAbastecimento(item) }"></ng-container>
@@ -146,7 +147,8 @@
           <ul class="lista-lancamentos">
             @for (item of v.abastecimentosArla; track item.id) {
               <li [attr.data-lancamento]="'abastecimento-' + item.id">
-                <span>{{ item.data | data }}{{ item.hora ? ' ' + item.hora.slice(0, 5) : '' }}</span>
+                <span>{{ item.data | data }}</span>
+                <span [class.secundario]="item.quilometragem === null">{{ item.quilometragem === null ? 'km não informada' : (item.quilometragem | numero:0) + ' km' }}</span>
                 <span>{{ item.litros | numero:3 }} L</span>
                 <span>{{ item.valorTotal | moeda }}</span>
                 <ng-container *ngTemplateOutlet="acoesItem; context: { $implicit: a, tipo: 'abastecimentos', item: item, descricao: descricaoAbastecimento(item) }"></ng-container>

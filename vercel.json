@@ -1,12 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build:producao",
+  "outputDirectory": "dist/modelo-projeto-integrador/browser",
   "rewrites": [
     {
-      "source": "/api/:caminho*",
-      "destination": "https://animated-meme-q74jxw9ggq4whxrvx-8080.app.github.dev/api/:caminho*"
-    },
-    {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]

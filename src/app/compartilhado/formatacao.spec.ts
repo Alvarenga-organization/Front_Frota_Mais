@@ -1,5 +1,5 @@
 import { formatarData, formatarMoeda, formatarNumero, hojeEmBrasilia } from './formatacao';
-import { decimalPositivoValidator, paraDecimalApi } from './validadores';
+import { decimalPositivoValidator, paraDecimalApi, paraQuilometragemApi, quilometragemValidator } from './validadores';
 import { FormControl } from '@angular/forms';
 
 describe('Formatação e conversões', () => {
@@ -39,5 +39,22 @@ describe('Formatação e conversões', () => {
     consumo.setValue('100'); expect(consumo.valid).toBeFalse();
     consumo.setValue('2,555'); expect(consumo.hasError('decimal')).toBeTrue();
     consumo.setValue(''); expect(consumo.valid).toBeTrue();
+  });
+
+  it('paraQuilometragemApi: só inteiro de 0 a 9.999.999, sem arredondar nem converter texto inválido', () => {
+    expect(paraQuilometragemApi(0)).toBe(0);
+    expect(paraQuilometragemApi(9_999_999)).toBe(9_999_999);
+    expect(paraQuilometragemApi('10450')).toBe(10450);
+    for (const invalido of [10_000_000, -1, 1500.5, NaN, '1500.5', '1,5', '1e3', '12a', '-5', '', null, undefined]) {
+      expect(paraQuilometragemApi(invalido)).withContext(String(invalido)).toBeNull();
+    }
+  });
+
+  it('quilometragemValidator: vazio fica com o required; inválido acusa erro', () => {
+    const km = new FormControl<number | string | null>(null, quilometragemValidator);
+    expect(km.valid).toBeTrue();
+    km.setValue(1500.5); expect(km.hasError('quilometragem')).toBeTrue();
+    km.setValue(10_000_000); expect(km.hasError('quilometragem')).toBeTrue();
+    km.setValue(10450); expect(km.valid).toBeTrue();
   });
 });
