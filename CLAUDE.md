@@ -84,11 +84,11 @@ Para criar uma página, siga o padrão de `pages/caminhoes` (módulo próprio, c
 - O backend (Java + Spring Boot) decide regras, permissões, validações e cálculos. O frontend exibe, coleta e orienta; **não reimplementa** regras nem cálculos.
 - **Não invente** endpoints, campos, DTOs, enums, filtros, respostas, permissões ou funcionalidades. Não altere o contrato da API para acomodar uma tela.
 - Lacunas conhecidas da API: sem `/api/me`, sem recuperação de senha, sem paginação, sem filtro de data em `GET /api/viagens`, sem abastecimento avulso, sem reabertura nem exclusão de viagem, sem exportação PDF/Excel, sem série histórica mensal dedicada. Quando uma tela depender de algo inexistente, **apresente a lacuna**; não simule com dados fictícios nem com estado local apresentado como persistido.
-- Tipos TypeScript devem ser **fiéis aos DTOs** do contexto privado, definidos em um único lugar. A API ignora campos desconhecidos em silêncio: um nome errado vira `null` sem erro.
+- Tipos TypeScript devem ser **fiéis aos DTOs** do contexto privado, definidos em um único lugar. Desde o contrato 1.2 a API responde `400` a campo desconhecido (ex.: `hora` no abastecimento, substituída por `quilometragem`): envie exatamente os campos do DTO.
 - **`PUT` é substituição integral:** carregue o recurso, pré-preencha o formulário e reenvie todos os campos. Cuidado com opcionais (ex.: no `PUT` de viagem do DONO, omitir `motoristaId` **remove** o responsável).
 - Dinheiro: envie como **texto** (`"1500.00"`); exiba em moeda brasileira. Datas `AAAA-MM-DD`; instantes vêm em UTC e são exibidos no fuso de Brasília; "hoje" é calculado em `America/Sao_Paulo`.
 - Após criar, editar ou excluir abastecimento, pedágio ou despesa extra, **recarregue o detalhe da viagem** (a resposta do lançamento não traz a rentabilidade).
-- **URL da API** sempre em configuração de ambiente, nunca fixa no código. **CORS não está configurado no backend**; a proposta registrada é o proxy do `ng serve` encaminhando `/api` para a porta 8080, mas a estratégia (dev e produção) está **pendente de decisão**. Nunca peça CORS amplo (`*`).
+- **URL da API** sempre em configuração de ambiente, nunca fixa no código. Em desenvolvimento, o proxy do `ng serve` encaminha `/api` para a porta 8080. Em produção (decidido em 27/11/2026), a Vercel roda `npm run build:producao` com `FROTA_API_URL` (origem https da API) e o backend libera CORS só para `https://front-frota-mais.vercel.app`. Nunca peça CORS amplo (`*`).
 - Não repita requisições automaticamente em `4xx`; em `409`, recarregue o recurso (o estado mudou).
 - Toda tela que consulta a API tem estados de carregando, vazio (lista vazia não é erro), sucesso e falha.
 

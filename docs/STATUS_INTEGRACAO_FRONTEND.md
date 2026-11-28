@@ -1,8 +1,9 @@
 # Status da integração do front-end
 
-- **Atualizado em:** 23/11/2026
-- **Branch:** `feat/integracao-http` (a partir de `origin/main` `4971bfc`). Os commits de 19/11 foram recuperados do
-  Codespaces expirado pela exportação de alterações para a branch remota `codespace-ideal-space-guide-77vvwwxwjp5p2rv99`.
+- **Atualizado em:** 27/11/2026 (contrato 1.2 e publicação; seção 4B)
+- **Branch:** `fix/frontend-contrato-1.2-api-url` (a partir de `main` `a9c8563`). Histórico: `feat/integracao-http`
+  (a partir de `origin/main` `4971bfc`); os commits de 19/11 foram recuperados do Codespaces expirado pela exportação
+  de alterações para a branch remota `codespace-ideal-space-guide-77vvwwxwjp5p2rv99`.
 - **Back-end:** em 19/11 não estava disponível; a comunicação foi validada só com testes automatizados
   (`HttpTestingController`). Em **23/11** o contrato HTTP foi validado contra a API real do time de back-end,
   pelo proxy do `ng serve` (seção 4A). O fluxo completo pela interface (E2E no navegador) **ainda não foi feito**.
@@ -17,7 +18,7 @@ parcial, precisa ser conferido na API real.
 | **Implementado e validado por testes automatizados** | Infraestrutura HTTP, interceptor, sessão/JWT, guards, erros; login, registro, ativação de convite, troca de senha, logout; caminhões; motoristas e convites; viagens (lista, abertura, detalhe, alteração, finalização, cancelamento, correção, histórica, auditoria); lançamentos; manutenções; dashboard; relatórios |
 | **Contrato HTTP validado contra a API real (23/11, perfil DONO)** | Autenticação, caminhões, motoristas (listagem e convite com `503`), viagens, lançamentos, finalização, cancelamento, histórica, auditoria, manutenções e indicadores (seção 4A) |
 | **Ainda não validado contra a API real** | Perfil MOTORISTA (sem SMTP para ativar convite); ativação de convite; reenviar/cancelar convite; fluxo pelas telas no navegador (E2E) |
-| **Bloqueado por falta de informação ou contrato** | Publicação em produção (estratégia de CORS/domínio); convite de ponta a ponta (SMTP e URL de ativação no servidor); itens que a API não oferece (seção 5) |
+| **Bloqueado por falta de informação ou contrato** | Domínio definitivo e API de produção (homologação já publicada, seção 4B); convite de ponta a ponta (SMTP e URL de ativação no servidor); itens que a API não oferece (seção 5) |
 
 ## 2. Etapas
 
@@ -80,7 +81,7 @@ o que o front-end envia e espera.
 10. **Finalização (inferido):** consumos enviados no corpo da finalização satisfazem a exigência de consumo; quando faltam
     valor do frete, origem, destino ou km do carregamento, a tela faz `PUT` antes e só então `POST .../finalizar`.
 11. **Cancelamento:** `motivo` obrigatório; `dataFim` opcional (padrão hoje no servidor).
-12. **Lançamentos:** valores como texto (`"1553.10"`), hora `HH:MM`; resposta sem rentabilidade → a tela recarrega o
+12. **Lançamentos:** valores como texto (`"1553.10"`), `quilometragem` inteira no abastecimento (contrato 1.2); resposta sem rentabilidade → a tela recarrega o
     detalhe; `409` em finalizada; `403` do MOTORISTA em encerrada.
 13. **Rentabilidade e indicadores:** campos nulos para o MOTORISTA; nulos exibidos como "não calculado";
     período vazio com divisões nulas; série do dashboard = 7 chamadas a `/indicadores` (período + 6 meses).
@@ -141,6 +142,47 @@ dos tipos `*Request` do mesmo arquivo e foram aceitos pela API.
   com caminhões, viagens e manutenções fictícios. Ela é isolada das demais empresas pelo próprio back-end e
   **não foi removida**, para permitir conferência pelo time.
 
+## 4B. Contrato 1.2 e publicação (27/11/2026)
+
+### Problemas encontrados no build publicado
+
+1. **`/api` relativo no domínio da Vercel:** a Vercel rodava o `npm run build` padrão (sem `FROTA_API_URL`), e o
+   `vercel.json` encaminhava `/api` para um endereço de Codespaces que não existe mais → `404`.
+2. **Contrato 1.1 nos abastecimentos:** o front enviava `hora`; a API 1.2 recusa campo desconhecido
+   (`"Campo desconhecido: 'hora'."`) e exige `quilometragem` → `400`.
+3. **Salvar lançamento recarregava a página:** o `<form>` do lançamento não tinha `[formGroup]`; com só
+   `ReactiveFormsModule`, o `ngSubmit` não disparava e o navegador fazia o envio nativo.
+
+### Correções
+
+- `vercel.json` fixa `npm ci`, `npm run build:producao` e a saída `dist/modelo-projeto-integrador/browser`; retirado o
+  encaminhamento de `/api`. O build falha sem `FROTA_API_URL` válida (https, só origem, não local, não `*.vercel.app`).
+- `AbastecimentoRequest` com `quilometragem` no lugar de `hora`; `AbastecimentoResponse` com `quilometragem`
+  (e `hora` legado, não exibido). Validação estrita no formulário, obrigatória em abastecimento novo e depois de informada.
+- Detalhe exibe a quilometragem ou "km não informada"; auditoria ganhou o rótulo `quilometragem`.
+- `<form [formGroup]>` no lançamento, com testes que enviam pelo botão.
+
+### Validação contra a API de homologação (Northflank)
+
+API: `https://p01--frotamais-api-hml--hn7fxvh6c8pw.code.run` (`/actuator/health` `UP`). Com uma empresa de teste
+(nome `Teste Integracao Front`), pelo `curl`, com os corpos que o front monta:
+
+| Verificação | Resultado |
+|---|---|
+| CORS (preflight com `Origin: https://front-frota-mais.vercel.app`) | `200`, `access-control-allow-origin` exato, métodos `GET,POST,PUT,DELETE,OPTIONS`, cabeçalhos `content-type, authorization` |
+| Abertura com abastecimento com `hora` | `400 Campo desconhecido: 'hora'.` |
+| Abastecimento sem `quilometragem` ou com `null` (abertura, lançamento, histórica, Arla) | `400 Informe a quilometragem do caminhão no abastecimento (odômetro, em km).` |
+| `quilometragem` decimal, texto ou `10000000` | `400` |
+| Abertura com abastecimento anterior (data real do dia anterior) e km | `201`; resposta traz `quilometragem` e `hora: null` |
+| `PUT` apagando ou omitindo km já informada | `400`; `PUT` com km `200` |
+| Pedágio; despesa "Alimentação" | `201`; campo extra (`valorPago`) → `400` |
+| Carregamento (`PUT`), finalização, histórica com km, manutenção, indicadores | `200`/`201`; chaves de `IndicadoresResponse` idênticas ao tipo |
+| Convite de motorista | `503` (SMTP não configurado; "nada foi enviado nem gravado") |
+| Data de 28/11 enviada às 23:30 de Brasília (27/11) | `400 A data de início não pode estar no futuro.` (o servidor usa o dia de Brasília) |
+
+Não validado em homologação: registro antigo com `quilometragem: null` (a API não cria mais esse caso; coberto por
+testes automatizados) e o perfil MOTORISTA (sem SMTP, não há como ativar convite).
+
 ## 5. Lacunas da API (apresentadas na interface, não simuladas)
 
 Sem recuperação de senha ("Esqueceu sua senha?" informa que não existe), sem `/me` (nome e perfil vêm do login e ficam
@@ -151,7 +193,10 @@ abastecimento avulso, sem autor de cada lançamento.
 
 ## 6. Decisões que exigem aprovação do proprietário
 
-1. **Estratégia de CORS/publicação** em produção (o build usa `/api` relativo, supondo mesmo domínio ou proxy reverso).
+1. **Publicação (definida em 27/11/2026):** front-end na Vercel (`https://front-frota-mais.vercel.app`) com
+   `npm run build:producao` e `FROTA_API_URL`; API na Northflank (homologação), com CORS restrito a essa origem.
+   Pendente: domínio definitivo e URL da API de produção (trocar só a variável na Vercel e pedir ao back-end a nova
+   origem no CORS, se o domínio mudar).
 2. **Rótulos de indicadores:** a tela usa "Margem" (valor ponderado do servidor) em vez de "Margem Média", e
    "Lucro por km" (`lucroPorKm`) em vez de "R$/Km"; o card "Lucro Líquido" do Figma virou "Lucro dos fretes"
    (`lucroTotal`), com o "Resultado financeiro do período" (`resultadoFinanceiroPeriodo`) em bloco próprio. Confirmar.
