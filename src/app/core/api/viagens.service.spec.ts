@@ -74,7 +74,7 @@ describe('ViagensService e LancamentosService', () => {
   });
 
   it('lançamentos: POST, PUT e DELETE nas rotas de cada tipo', () => {
-    lancamentos.criar(205, 'abastecimentos', { tipo: 'ARLA', data: '2025-03-06', hora: null, litros: '20', valorTotal: '80.00' }).subscribe();
+    lancamentos.criar(205, 'abastecimentos', { tipo: 'ARLA', data: '2025-03-06', quilometragem: 10450, litros: '20', valorTotal: '80.00' }).subscribe();
     lancamentos.atualizar(205, 'pedagios', 950, { data: '2025-03-06', valor: '40.10' }).subscribe();
     lancamentos.excluir(205, 'despesas-extras', 960).subscribe();
     const reqs = controle.match(() => true);
@@ -84,7 +84,7 @@ describe('ViagensService e LancamentosService', () => {
       'DELETE /api/viagens/205/despesas-extras/960'
     ]);
     expect(reqs[0].request.body.valorTotal).toBe('80.00');
-    reqs[0].flush({ id: 1, tipo: 'ARLA', data: '2025-03-06', hora: null, litros: 20, valorTotal: 80 });
+    reqs[0].flush({ id: 1, tipo: 'ARLA', data: '2025-03-06', quilometragem: 10450, hora: null, litros: 20, valorTotal: 80 });
     reqs[1].flush({ id: 950, data: '2025-03-06', valor: 40.1 });
     reqs[2].flush(null, { status: 204, statusText: 'No Content' });
   });

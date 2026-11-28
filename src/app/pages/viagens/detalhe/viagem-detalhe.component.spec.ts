@@ -44,6 +44,19 @@ describe('ViagemDetalheComponent', () => {
     return fixture;
   }
 
+  it('abastecimentos: mostra a quilometragem; registro antigo nulo vira "km não informada" (nem zero, nem a hora antiga)', () => {
+    entrarComo('MOTORISTA');
+    const el: HTMLElement = criar(viagemEmAndamento({
+      abastecimentosArla: [{ id: 902, tipo: 'ARLA', data: '2025-03-05', quilometragem: null, hora: '07:15:00', litros: 20, valorTotal: 80 }]
+    })).nativeElement;
+    const diesel = el.querySelector('[data-lancamento="abastecimento-901"]') as HTMLElement;
+    const arla = el.querySelector('[data-lancamento="abastecimento-902"]') as HTMLElement;
+    expect(diesel.textContent).toContain('99.950 km');
+    expect(arla.textContent).toContain('km não informada');
+    expect(arla.textContent).not.toContain('0 km');
+    expect(arla.textContent).not.toContain('07:15');
+  });
+
   it('DONO: resultado com nulos como "não calculado" e as pendências do servidor sem reescrever', () => {
     entrarComo('DONO');
     const el: HTMLElement = criar(viagemEmAndamento()).nativeElement;

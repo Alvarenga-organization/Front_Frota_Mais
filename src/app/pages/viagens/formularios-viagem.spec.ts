@@ -62,14 +62,14 @@ describe('Formulários de viagem', () => {
       c.formulario.patchValue({ caminhaoId: '1', responsavel: '31', dataInicio: '2025-03-05', saida: 'VAZIO', km: '10400',
         origem: ' São Paulo ', valorFrete: '3.500,00', consumoMedioVazio: '3,20' });
       c.adicionarAbastecimento();
-      c.abastecimentos.at(0).patchValue({ data: '2025-03-04', hora: '18:30', litros: '100', valorTotal: '640,00' });
+      c.abastecimentos.at(0).patchValue({ data: '2025-03-04', quilometragem: 10395, litros: '100', valorTotal: '640,00' });
       c.abrir();
       const req = controle.expectOne('/api/viagens');
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({
         caminhaoId: 1, motoristaId: 31, dataInicio: '2025-03-05', origem: 'São Paulo', destino: null, valorFrete: '3500.00',
         kmInicialVazio: 10400, kmInicialCarregado: null, consumoMedioVazio: '3.20', consumoMedioCarregado: null,
-        abastecimentos: [{ tipo: 'DIESEL', data: '2025-03-04', hora: '18:30', litros: '100', valorTotal: '640.00' }]
+        abastecimentos: [{ tipo: 'DIESEL', data: '2025-03-04', quilometragem: 10395, litros: '100', valorTotal: '640.00' }]
       });
       const aberta = viagemEmAndamento();
       req.flush(aberta, { status: 201, statusText: 'Created' });
@@ -105,6 +105,27 @@ describe('Formulários de viagem', () => {
       fixture.detectChanges();
       expect(fixture.nativeElement.textContent).toContain('O caminhão já tem uma viagem em andamento.');
       expect(fechar).not.toHaveBeenCalled();
+    });
+    it('abastecimento anterior sem quilometragem bloqueia a abertura inteira (nada é enviado) e reabre a seção', () => {
+      const fixture = criar(AberturaViagemComponent, { caminhoes: CAMINHOES_DONO_MOCK }, 'MOTORISTA');
+      const c = fixture.componentInstance;
+      c.formulario.patchValue({ caminhaoId: '1', dataInicio: '2025-03-05', saida: 'VAZIO', km: '10400' });
+      c.adicionarAbastecimento();
+      c.adicionarAbastecimento();
+      c.abastecimentos.at(0).patchValue({ data: '2025-03-04', quilometragem: 10395, litros: '100', valorTotal: '640,00' });
+      c.abastecimentos.at(1).patchValue({ tipo: 'ARLA', data: '2025-03-04', litros: '20', valorTotal: '80,00' });
+      c.maisInformacoes.set(false);
+      c.abrir();
+      controle.expectNone('/api/viagens');
+      expect(c.maisInformacoes()).toBeTrue();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).toContain('Informe a quilometragem do odômetro');
+      c.abastecimentos.at(1).patchValue({ quilometragem: 10396 });
+      c.abrir();
+      const req = controle.expectOne('/api/viagens');
+      expect(req.request.body.abastecimentos.map((a: { quilometragem: number }) => a.quilometragem)).toEqual([10395, 10396]);
+      expect(req.request.body.abastecimentos.every((a: object) => !('hora' in a))).toBeTrue();
+      req.flush(viagemEmAndamento());
     });
   });
 
@@ -197,14 +218,14 @@ describe('Formulários de viagem', () => {
       c.salvar();
       const req = controle.expectOne('/api/viagens/205/abastecimentos/901');
       expect(req.request.method).toBe('PUT');
-      expect(req.request.body).toEqual({ tipo: 'DIESEL', data: '2025-03-04', hora: '18:30', litros: '100', valorTotal: '1553.10' });
+      expect(req.request.body).toEqual({ tipo: 'DIESEL', data: '2025-03-04', quilometragem: 99950, litros: '100', valorTotal: '1553.10' });
       req.flush(viagem.abastecimentosDiesel[0]);
     });
 
     it('preço do diesel implausível (400): mostra a mensagem do servidor', () => {
       const fixture = criar(LancamentoFormularioComponent, { viagem: viagemEmAndamento(), tipo: 'abastecimentos', combustivel: 'DIESEL' });
       const c = fixture.componentInstance;
-      c.abastecimento.patchValue({ data: '2025-03-06', litros: '1500', valorTotal: '250' });
+      c.abastecimento.patchValue({ data: '2025-03-06', quilometragem: 10450, litros: '1500', valorTotal: '250' });
       c.salvar();
       controle.expectOne('/api/viagens/205/abastecimentos').flush(
         { status: 400, erro: 'Dados inválidos', detalhes: ['Preço por litro fora do esperado. Confira se litros e valor não foram trocados.'] },
@@ -262,6 +283,22 @@ describe('Formulários de viagem', () => {
       });
       req.flush(viagemFinalizada({ cadastroRetroativoEm: '2026-11-19T12:00:00Z' }), { status: 201, statusText: 'Created' });
       expect(fechar).toHaveBeenCalled();
+    });
+
+    it('abastecimento sem quilometragem bloqueia o cadastro histórico; com km, vai no mesmo POST', () => {
+      const fixture = criar(HistoricaViagemComponent, { caminhoes: CAMINHOES_DONO_MOCK, motoristas: [] });
+      const c = fixture.componentInstance;
+      c.formulario.patchValue({ caminhaoId: '1', dataInicio: '2025-02-10', dataFim: '2025-02-12', origem: 'Cruzália', destino: 'Santos',
+        valorFrete: '2.800,00', kmInicialCarregado: '50000', kmFinalCarregado: '50600', consumoMedioCarregado: '2,40' });
+      c.adicionar('abastecimento');
+      c.abastecimentos.at(0).patchValue({ data: '2025-02-10', litros: '200', valorTotal: '1.240,00' });
+      c.salvar();
+      controle.expectNone('/api/viagens/historicas');
+      c.abastecimentos.at(0).patchValue({ quilometragem: 50000 });
+      c.salvar();
+      const req = controle.expectOne('/api/viagens/historicas');
+      expect(req.request.body.abastecimentos).toEqual([{ tipo: 'DIESEL', data: '2025-02-10', quilometragem: 50000, litros: '200', valorTotal: '1240.00' }]);
+      req.flush(viagemFinalizada(), { status: 201, statusText: 'Created' });
     });
 
     it('com deslocamento vazio, o consumo vazio passa a ser obrigatório', () => {

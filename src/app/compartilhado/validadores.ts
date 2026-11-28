@@ -30,6 +30,30 @@ export const inteiroValidator: ValidatorFn = (controle: AbstractControl): Valida
 };
 
 /**
+ * Quilometragem (odômetro) no formato do contrato: inteiro de 0 a 9.999.999.
+ * Aceita número inteiro ou texto só com dígitos; qualquer outra coisa ("1,5", "1e3",
+ * decimal, negativo) devolve `null`. Nunca arredonda nem corrige o valor.
+ */
+export function paraQuilometragemApi(valor: unknown): number | null {
+  let numero: number;
+  if (typeof valor === 'number') {
+    numero = valor;
+  } else if (typeof valor === 'string' && /^\d+$/.test(valor.trim())) {
+    numero = Number(valor.trim());
+  } else {
+    return null;
+  }
+  return Number.isInteger(numero) && numero >= FORMATO.km.minimo && numero <= FORMATO.km.maximo ? numero : null;
+}
+
+/** Quilometragem válida (ver `paraQuilometragemApi`). Vazio é tratado pelo `required`. */
+export const quilometragemValidator: ValidatorFn = (controle: AbstractControl): ValidationErrors | null => {
+  const valor = controle.value;
+  if (valor === null || valor === undefined || valor === '') return null;
+  return paraQuilometragemApi(valor) === null ? { quilometragem: true } : null;
+};
+
+/**
  * Converte o número digitado ("1.500,50", "1500.5", "250,5") para o texto aceito pela
  * API ("1500.50" / "250.5"). Devolve `null` se vazio ou inválido. Não arredonda:
  * mais casas que o permitido torna o valor inválido.

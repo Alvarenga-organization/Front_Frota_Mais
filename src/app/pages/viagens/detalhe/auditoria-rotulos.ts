@@ -22,6 +22,8 @@ export const ROTULO_CAMPO_AUDITORIA: Partial<Record<string, string>> = {
   motoristaId: 'Motorista responsável (id)',
   tipo: 'Combustível',
   data: 'Data',
+  quilometragem: 'Quilometragem do caminhão (km)',
+  /** Legado (contrato 1.1): aparece só em alterações antigas. */
   hora: 'Hora',
   litros: 'Litros',
   valorTotal: 'Valor pago',
