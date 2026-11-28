@@ -47,6 +47,10 @@ function validarOrigemApi(texto) {
   if (hostDeDesenvolvimento(url.hostname)) {
     throw new Error(`FROTA_API_URL aponta para um endereço de desenvolvimento (${url.hostname}); use a URL pública da API.`);
   }
+  // A API não é servida pela Vercel: apontar para lá repetiria o 404 de /api no próprio domínio do front-end.
+  if (url.hostname === 'vercel.app' || url.hostname.endsWith('.vercel.app')) {
+    throw new Error(`FROTA_API_URL aponta para a Vercel (${url.hostname}), onde só está o front-end; use a URL da API.`);
+  }
   return `${url.origin}/api`;
 }
 
