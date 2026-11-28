@@ -64,7 +64,11 @@ export class LancamentoFormularioComponent {
     return this.dados.atual ? textos.corrigir : textos.novo;
   }
 
-  private get grupo() {
+  /**
+   * Grupo do tipo em edição. Precisa estar no `[formGroup]` do `<form>`: sem a diretiva,
+   * o `ngSubmit` não existe e o navegador faz o envio nativo (a página recarregava).
+   */
+  get grupo() {
     switch (this.dados.tipo) {
       case 'abastecimentos': return this.abastecimento;
       case 'pedagios': return this.pedagio;

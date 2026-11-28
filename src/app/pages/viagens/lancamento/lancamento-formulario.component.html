@@ -1,6 +1,6 @@
 <app-janela [titulo]="titulo"
   [descricao]="encerrada ? 'Viagem encerrada: a alteração fica registrada na auditoria e recalcula o resultado deste frete.' : null">
-  <form (ngSubmit)="salvar()" id="formulario-lancamento" novalidate>
+  <form [formGroup]="grupo" (ngSubmit)="salvar()" id="formulario-lancamento" novalidate>
     @switch (dados.tipo) {
       @case ('abastecimentos') {
         <app-campos-abastecimento [grupo]="abastecimento" [hoje]="hoje"
