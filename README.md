@@ -73,7 +73,7 @@ O [`vercel.json`](vercel.json) fixa a configuração (o painel não precisa de a
 | Instalação | `npm ci` |
 | Build | `npm run build:producao` |
 | Saída | `dist/modelo-projeto-integrador/browser` |
-| SPA | toda rota que não começa com `/api/` devolve `index.html`; `/api/*` no domínio da Vercel dá `404` de propósito |
+| SPA | rota desconhecida devolve `index.html`. Atenção: na prática a Vercel também devolve `index.html` (`200`) para `/api/*` no próprio domínio; quem garante que nenhuma chamada vá para lá é o `build:producao`, que confere o bundle |
 | Variável | `FROTA_API_URL` em *Settings → Environment Variables* (Production), com a **origem** https da API, sem `/api` |
 
 A origem publicada do front-end é `https://front-frota-mais.vercel.app`; é ela que o back-end libera no CORS. Deploys de

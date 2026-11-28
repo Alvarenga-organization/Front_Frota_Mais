@@ -156,7 +156,7 @@ dos tipos `*Request` do mesmo arquivo e foram aceitos pela API.
 ### Correções
 
 - `vercel.json` fixa `npm ci`, `npm run build:producao` e a saída `dist/modelo-projeto-integrador/browser`; retirado o
-  encaminhamento de `/api`. O build falha sem `FROTA_API_URL` válida (https, só origem, não local, não `*.vercel.app`).
+  encaminhamento de `/api` (o fallback da SPA continua cobrindo `/api/*`; ver abaixo). O build falha sem `FROTA_API_URL` válida (https, só origem, não local, não `*.vercel.app`).
 - `AbastecimentoRequest` com `quilometragem` no lugar de `hora`; `AbastecimentoResponse` com `quilometragem`
   (e `hora` legado, não exibido). Validação estrita no formulário, obrigatória em abastecimento novo e depois de informada.
 - Detalhe exibe a quilometragem ou "km não informada"; auditoria ganhou o rótulo `quilometragem`.
@@ -177,11 +177,25 @@ API: `https://p01--frotamais-api-hml--hn7fxvh6c8pw.code.run` (`/actuator/health`
 | `PUT` apagando ou omitindo km já informada | `400`; `PUT` com km `200` |
 | Pedágio; despesa "Alimentação" | `201`; campo extra (`valorPago`) → `400` |
 | Carregamento (`PUT`), finalização, histórica com km, manutenção, indicadores | `200`/`201`; chaves de `IndicadoresResponse` idênticas ao tipo |
-| Convite de motorista | `503` (SMTP não configurado; "nada foi enviado nem gravado") |
+| Convite de motorista | primeiro `503` (SMTP não configurado; "nada foi enviado nem gravado"); depois, na mesma noite, `201` (`CONVITE_PENDENTE`): o SMTP passou a responder no servidor |
 | Data de 28/11 enviada às 23:30 de Brasília (27/11) | `400 A data de início não pode estar no futuro.` (o servidor usa o dia de Brasília) |
 
-Não validado em homologação: registro antigo com `quilometragem: null` (a API não cria mais esse caso; coberto por
-testes automatizados) e o perfil MOTORISTA (sem SMTP, não há como ativar convite).
+### Depois do deploy (merge `5d3bebf`, publicado às 02:50 UTC de 28/11)
+
+- **Bundle publicado** em `https://front-frota-mais.vercel.app` (todos os 30 arquivos baixados e conferidos): a URL
+  `https://p01--frotamais-api-hml--hn7fxvh6c8pw.code.run/api` aparece uma vez; nenhum `/api` relativo, `localhost`,
+  `.github.dev`, nem indícios de credenciais (Neon/Postgres, JDBC, SMTP, segredo JWT, chave de API). O código da
+  quilometragem está no bundle.
+- **Chamadas com `Origin: https://front-frota-mais.vercel.app`** (o que o navegador envia): login, caminhões,
+  motoristas, viagens, detalhe, indicadores e manutenções `200`; erros `400` (`hora`), `401` (senha errada e sem
+  token), `404` e `409` com `access-control-allow-origin` exato, então a tela recebe `detalhes` em vez de falha de
+  rede. Origem não autorizada → `403 Invalid CORS request`.
+- **`/api/*` no domínio da Vercel** devolve `index.html` (`200`): a exclusão `/((?!api/).*)` do `vercel.json` não teve
+  efeito. Sem impacto, porque o bundle não faz chamada relativa, mas não serve de alarme.
+
+Não validado: **telas no navegador** (não havia navegador automatizado nesta sessão; a validação foi HTTP com a
+mesma origem e os mesmos corpos), registro antigo com `quilometragem: null` (a API não cria mais esse caso; coberto
+por testes automatizados) e o perfil MOTORISTA (convite enviado a endereço de teste; ativação não feita).
 
 ## 5. Lacunas da API (apresentadas na interface, não simuladas)
 
